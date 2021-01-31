@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>乘客调度算法验证</title>
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=be0af0f8f5f254e2481ebcb939a5fca7"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.js"></script>
+    <style>
+        html,
+        body,
+        #container {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<script>
+    var map = new AMap.Map('container', {
+        resizeEnable: true,
+        zoom: 11,
+        center: [116.397428, 39.90923]
+    });
+    // 构造点标记
+    var marker = new AMap.Marker({
+        icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+        position: [116.405467, 39.907761]
+    });
+
+
+    map.on('complete', function () {
+        // 地图图块加载完成后触发
+
+        $.ajax('/data', {
+            type: "GET",
+            dataType: "json",
+            success: function (resp) {
+                let data = resp.data;
+                let markers = [];
+                for (let i = 0; i < data.length; i++) {
+                    var content = '<div style="width:80px; height=80px; background:url(/static/img/car.png) no-repeat;"><span>车子</span></div>'
+                    markers.push(new AMap.Marker({
+                        icon: new AMap.Icon({
+                            imageSize: new AMap.Size(50, 50),   // 根据所设置的大小拉伸或压缩图片
+                            size: new AMap.Size(50, 50),
+                            image: "{{ url_for('static', filename='img/car.png') }}"
+                        }),
+                        //content: content,
+                        position: data[i].driver.lnglat,
+                        anchor: 'center',
+                    }));
+
+                    markers.push(new AMap.Marker({
+                        icon: new AMap.Icon({
+                            imageSize: new AMap.Size(50, 50),   // 根据所设置的大小拉伸或压缩图片
+                            size: new AMap.Size(50, 50),
+                            image: "{{ url_for('static', filename='img/people.png') }}"
+                        }),
+                        position: data[i].passenger.lnglat,
+                        anchor: 'center'
+                    }));
+                }
+                map.add(markers);
+                map.setCenter(resp.center)
+            }
+        })
+
+    });
+
+</script>
+</body>
+</html>
