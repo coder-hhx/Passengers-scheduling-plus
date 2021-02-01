@@ -16,6 +16,50 @@
             margin: 0;
             padding: 0;
         }
+
+        .car-bg {
+            width: 48px;
+            height: 48px;
+            background: url("/static/img/car.png");
+            position: relative;
+        }
+
+        .car-font {
+            text-align: center;
+            line-height: 48px;
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            top: 0;
+            left: 0;
+            color: #fc4700;
+            font-size: 20px;
+            bottom: 0;
+            right: 0;
+            margin: auto;
+        }
+
+        .p-bg {
+            width: 48px;
+            height: 48px;
+            background: url("/static/img/people.png");
+            position: relative;
+        }
+
+        .p-font {
+            text-align: center;
+            line-height: 48px;
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            top: 0;
+            left: 0;
+            color: black;
+            font-size: 20px;
+            bottom: 0;
+            right: 0;
+            margin: auto;
+        }
     </style>
 </head>
 <body>
@@ -26,16 +70,13 @@
         zoom: 11,
         center: [116.397428, 39.90923]
     });
-    // 构造点标记
-    var marker = new AMap.Marker({
-        icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
-        position: [116.405467, 39.907761]
-    });
 
+    function getRandomColor () {
+        return '#' + Math.floor(Math.random() * 0xffffff).toString(16);
+    }
 
     map.on('complete', function () {
         // 地图图块加载完成后触发
-
         $.ajax('/data', {
             type: "GET",
             dataType: "json",
@@ -43,30 +84,39 @@
                 let data = resp.data;
                 let markers = [];
                 for (let i = 0; i < data.length; i++) {
-                    var content = '<div style="width:80px; height=80px; background:url(/static/img/car.png) no-repeat;"><span>车子</span></div>'
+                    var content = '<div class="car-bg"><b class="car-font">' + data[i].driver.site_num + '</b></div>';
                     markers.push(new AMap.Marker({
-                        icon: new AMap.Icon({
-                            imageSize: new AMap.Size(50, 50),   // 根据所设置的大小拉伸或压缩图片
-                            size: new AMap.Size(50, 50),
-                            image: "{{ url_for('static', filename='img/car.png') }}"
-                        }),
-                        //content: content,
+                        content: content,
+                        offset: new AMap.Pixel(-24, -24),
                         position: data[i].driver.lnglat,
-                        anchor: 'center',
                     }));
 
-                    markers.push(new AMap.Marker({
-                        icon: new AMap.Icon({
-                            imageSize: new AMap.Size(50, 50),   // 根据所设置的大小拉伸或压缩图片
-                            size: new AMap.Size(50, 50),
-                            image: "{{ url_for('static', filename='img/people.png') }}"
-                        }),
-                        position: data[i].passenger.lnglat,
-                        anchor: 'center'
-                    }));
+                    console.log(data[i].passenger_num);
+
+                    for (let j = 0; j < data[i].passenger_num; j++) {
+                        var lng = data[i].passenger.lnglat[0] + (((Math.random() * 2) - 1) / 500);
+                        var lat = data[i].passenger.lnglat[1] + (((Math.random() * 2) - 1) / 500);
+                        var content = '<div class="p-bg"><b class="p-font">' + data[i].passenger.id + '</b></div>';
+                        markers.push(new AMap.Marker({
+                            content: content,
+                            position: [lng, lat],
+                            offset: new AMap.Pixel(-24, -24),
+                        }));
+
+                        var polyline = new AMap.Polyline({
+                            path: [data[i].driver.lnglat, [lng, lat]],
+                            strokeWeight: 2,
+                            isOutline: true,
+                            strokeColor: getRandomColor()
+                        })
+
+                        map.add(polyline)
+                    }
                 }
+
                 map.add(markers);
                 map.setCenter(resp.center)
+
             }
         })
 

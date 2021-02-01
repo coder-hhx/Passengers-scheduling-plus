@@ -288,18 +288,18 @@ def run(debug=True):
 # %%
 
 if __name__ == '__main__':
-    table = run(False)
-    result = [[i[0][0], i[0][1], i[1]] for i in
-              list(collections.Counter([(i[0]['id'], i[1]['id']) for i in table]).items())]
+    table = run()
+    # result = [[i[0][0], i[0][1], i[1]] for i in
+    #           list(collections.Counter([(i[0]['id'], i[1]['id']) for i in table]).items())]
+    #
+    # for i in range(len(result)):
+    #     for j in table:
+    #         if result[i][0] == j[0]['id'] and result[i][1] == j[1]['id']:
+    #             result[i] = {
+    #                 "passenger": {'id': result[i][0], 'lnglat': j[0]['coordinate']},
+    #                 "driver": {'id': result[i][1], 'lnglat': j[1]['coordinate']},
+    #                 "passenger_num": result[i][2]
+    #             }
+    #             break
 
-    for i in range(len(result)):
-        for j in table:
-            if result[i][0] == j[0]['id'] and result[i][1] == j[1]['id']:
-                result[i] = {
-                    "driver": {'id': result[i][0], 'lnglat': j[0]['coordinate']},
-                    "passenger": {'id': result[i][1], 'lnglat': j[1]['coordinate']},
-                    "passenger_num": result[i][2]
-                }
-                break
-
-    print(result)
+    print(table)

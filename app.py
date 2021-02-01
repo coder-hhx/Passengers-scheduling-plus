@@ -23,8 +23,8 @@ def data():
         for j in table:
             if result[i][0] == j[0]['id'] and result[i][1] == j[1]['id']:
                 result[i] = {
-                    "driver": {'id': result[i][0], 'lnglat': j[0]['coordinate']},
-                    "passenger": {'id': result[i][1], 'lnglat': j[1]['coordinate']},
+                    "passenger": {'id': result[i][0], 'lnglat': j[0]['coordinate']},
+                    "driver": {'id': result[i][1], 'lnglat': j[1]['coordinate'], 'site_num': j[1]['sites']},
                     "passenger_num": result[i][2]
                 }
                 lng += j[0]['coordinate'][0] + j[1]['coordinate'][0]
