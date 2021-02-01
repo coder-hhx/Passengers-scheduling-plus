@@ -1,7 +1,7 @@
 # 载入用户数据
 
 from random import choice, random
-from tools.coordinates_generator import random_coordinates_generator
+from old.coordinates_generator import random_coordinates_generator
 
 
 def load_user_data():

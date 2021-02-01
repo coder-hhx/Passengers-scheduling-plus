@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
     <title>乘客调度算法验证</title>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"/>
     <script src="https://webapi.amap.com/maps?v=1.4.15&key=be0af0f8f5f254e2481ebcb939a5fca7"></script>
     <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.js"></script>
     <style>
@@ -60,10 +61,26 @@
             right: 0;
             margin: auto;
         }
+
+        .custom-input-card {
+            width: 18rem;
+        }
+
+        .custom-input-card .btn:last-child {
+            margin-left: 1rem;
+        }
+
     </style>
 </head>
 <body>
 <div id="container"></div>
+<div class="input-card custom-input-card">
+    <h4>切换算法</h4>
+    <div class="input-item">
+        <input type="button" class="btn" value="使用老版算法" onClick="old_arithmetic()"/>
+        <input type="button" class="btn" value="使用新版算法" onClick="new_arithmetic()"/>
+    </div>
+</div>
 <script>
     var map = new AMap.Map('container', {
         resizeEnable: true,
@@ -71,13 +88,13 @@
         center: [116.397428, 39.90923]
     });
 
-    function getRandomColor () {
+    function getRandomColor() {
         return '#' + Math.floor(Math.random() * 0xffffff).toString(16);
     }
 
-    map.on('complete', function () {
-        // 地图图块加载完成后触发
-        $.ajax('/data', {
+    function old_arithmetic() {
+        map.clearMap();
+        $.ajax('/old_arithmetic', {
             type: "GET",
             dataType: "json",
             success: function (resp) {
@@ -91,11 +108,11 @@
                         position: data[i].driver.lnglat,
                     }));
 
-                    console.log(data[i].passenger_num);
+                    var color = getRandomColor();
 
                     for (let j = 0; j < data[i].passenger_num; j++) {
-                        var lng = data[i].passenger.lnglat[0] + (((Math.random() * 2) - 1) / 500);
-                        var lat = data[i].passenger.lnglat[1] + (((Math.random() * 2) - 1) / 500);
+                        var lng = data[i].passenger.lnglat[0] + (((Math.random() * 2) - 1) / 5000);
+                        var lat = data[i].passenger.lnglat[1] + (((Math.random() * 2) - 1) / 5000);
                         var content = '<div class="p-bg"><b class="p-font">' + data[i].passenger.id + '</b></div>';
                         markers.push(new AMap.Marker({
                             content: content,
@@ -107,7 +124,7 @@
                             path: [data[i].driver.lnglat, [lng, lat]],
                             strokeWeight: 2,
                             isOutline: true,
-                            strokeColor: getRandomColor()
+                            strokeColor: color
                         })
 
                         map.add(polyline)
@@ -116,11 +133,14 @@
 
                 map.add(markers);
                 map.setCenter(resp.center)
-
             }
         })
+    }
 
-    });
+    function new_arithmetic() {
+        map.clearMap();
+    }
+
 
 </script>
 </body>

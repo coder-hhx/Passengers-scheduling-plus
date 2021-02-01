@@ -1,6 +1,6 @@
 # 载入司机数据
 
-from tools.coordinates_generator import random_coordinates_generator, matrix_coordinates_generator
+from old.coordinates_generator import random_coordinates_generator, matrix_coordinates_generator
 import random
 
 

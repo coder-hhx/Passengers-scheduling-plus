@@ -2,18 +2,18 @@ import collections
 
 from flask import Flask, render_template, jsonify
 
-from tools.scheduling_tool import run
+from old.scheduling_tool import run
 
 app = Flask(__name__)
 
 
 @app.route('/')
-def test():
-    return render_template('test.html')
+def index():
+    return render_template('index.html')
 
 
-@app.route('/data')
-def data():
+@app.route('/old_arithmetic')
+def old_arithmetic():
     table = run(False)
     result = [[i[0][0], i[0][1], i[1]] for i in
               list(collections.Counter([(i[0]['id'], i[1]['id']) for i in table]).items())]
@@ -36,6 +36,11 @@ def data():
         'data': result,
         'center': [lng / count, lat / count]
     })
+
+
+@app.route('/new_arithmetic')
+def new_arithmetic():
+    pass
 
 
 if __name__ == '__main__':
