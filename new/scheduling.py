@@ -29,5 +29,21 @@ def get_distance(order: Order, car: Car):
     return math.hypot(order.lng - car.lng, order.lat - car.lat)
 
 
-def receive_type_caculate():
+def receive_type_calculate():
+    """
+    接模式下，需计算司机位置
+    :return:
+    """
+
+    # TODO 使用动态规划之01背包问题算法进行计算
+    order_list, car_list, max_distance, _type = load_data()
+
+
+def send_type_calculate():
+    """
+    送模式下，不需计算司机位置
+    :return:
+    """
+
+    # TODO 从第一个订单和第一个车找，第一个车找完，再从剩下的订单和剩下的车找，依次类推
     order_list, car_list, max_distance, _type = load_data()
