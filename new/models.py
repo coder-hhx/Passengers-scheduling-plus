@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+-------------------------------------------------
+Project Name: Passengers-scheduling-plus
+File Name: models.py
+Author: hhx
+Contact: houhaixu_email@163.com
+Create Date: 2021/2/1
+-------------------------------------------------
+"""
+
+
 class Order(object):
     __slots__ = ["_id", "passenger_num", "lng", "lat"]
 

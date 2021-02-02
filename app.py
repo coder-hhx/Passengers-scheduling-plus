@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+-------------------------------------------------
+Project Name: Passengers-scheduling-plus
+File Name: app.py
+Author: hhx
+Contact: houhaixu_email@163.com
+Create Date: 2021/1/31
+-------------------------------------------------
+"""
+
 import collections
 
 from flask import Flask, render_template, jsonify
