@@ -288,7 +288,7 @@ def run(debug=True):
 # %%
 
 if __name__ == '__main__':
-    table = run()
+    table = run(False)
     # result = [[i[0][0], i[0][1], i[1]] for i in
     #           list(collections.Counter([(i[0]['id'], i[1]['id']) for i in table]).items())]
     #

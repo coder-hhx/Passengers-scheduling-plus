@@ -101,7 +101,7 @@
                 let data = resp.data;
                 let markers = [];
                 for (let i = 0; i < data.length; i++) {
-                    var content = '<div class="car-bg"><b class="car-font">' + data[i].driver.site_num + '</b></div>';
+                    var content = '<div class="car-bg"><b class="car-font">' + data[i].driver.id + '-' + data[i].driver.site_num + '</b></div>';
                     markers.push(new AMap.Marker({
                         content: content,
                         offset: new AMap.Pixel(-24, -24),
@@ -111,9 +111,9 @@
                     var color = getRandomColor();
 
                     for (let j = 0; j < data[i].passenger_num; j++) {
-                        var lng = data[i].passenger.lnglat[0] + (((Math.random() * 2) - 1) / 5000);
-                        var lat = data[i].passenger.lnglat[1] + (((Math.random() * 2) - 1) / 5000);
-                        var content = '<div class="p-bg"><b class="p-font">' + data[i].passenger.id + '</b></div>';
+                        var lng = data[i].order.lnglat[0] + (((Math.random() * 2) - 1) / 5000);
+                        var lat = data[i].order.lnglat[1] + (((Math.random() * 2) - 1) / 5000);
+                        var content = '<div class="p-bg"><b class="p-font">' + data[i].order.id + '</b></div>';
                         markers.push(new AMap.Marker({
                             content: content,
                             position: [lng, lat],
@@ -125,7 +125,7 @@
                             strokeWeight: 2,
                             isOutline: true,
                             strokeColor: color
-                        })
+                        });
 
                         map.add(polyline)
                     }
@@ -139,6 +139,43 @@
 
     function new_arithmetic() {
         map.clearMap();
+        $.ajax('/new_arithmetic', {
+            type: "GET",
+            dataType: "json",
+            success: function (resp) {
+                let data = resp.data;
+                let markers = [];
+                for (let i = 0; i < data.length; i++) {
+                    var content = '<div class="car-bg"><b class="car-font">' + data[i].driver.id + '-' + data[i].driver.site_num + '</b></div>';
+                    markers.push(new AMap.Marker({
+                        content: content,
+                        offset: new AMap.Pixel(-24, -24),
+                        position: data[i].driver.lnglat,
+                    }));
+
+                    var color = getRandomColor();
+
+                    content = '<div class="p-bg"><b class="p-font">' + data[i].order.id + '-' + data[i].passenger_num + '</b></div>';
+                    markers.push(new AMap.Marker({
+                        content: content,
+                        position: data[i].order.lnglat,
+                        offset: new AMap.Pixel(-24, -24),
+                    }));
+
+                    var polyline = new AMap.Polyline({
+                        path: [data[i].driver.lnglat, data[i].order.lnglat],
+                        strokeWeight: 2,
+                        isOutline: true,
+                        strokeColor: color
+                    });
+
+                    map.add(polyline)
+                }
+
+                map.add(markers);
+                map.setCenter(resp.center)
+            }
+        })
     }
 
 
