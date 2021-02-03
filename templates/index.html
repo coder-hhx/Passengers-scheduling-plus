@@ -99,7 +99,7 @@
     }
 
     function scene_change(scene) {
-        type = "scene"
+        type = scene;
         $.ajax('/scene_change/' + scene + '/', {
             type: "GET",
             dataType: "json",
@@ -167,6 +167,7 @@
             success: function (resp) {
                 let data = resp.data;
                 let markers = [];
+                console.log(type)
                 if (type === "receive") {
                     for (let i = 0; i < data.length; i++) {
                         var content = '<div class="car-bg"><b class="car-font">' + data[i].driver.id + '-' + data[i].driver.site_num + '</b></div>';
@@ -202,9 +203,9 @@
                         var color = getRandomColor()
                         for (let j = 0; j < data[i].length; j++) {
                             let order = data[i][j];
-                            var content = '<div class="car-bg" style="background: ' + color + ';"><b class="car-font" style="color: white;">' + order.id + '-' + order.passenger_num + '</b></div>';
-                            var lng = data[i].order.lnglat[0] + (((Math.random() * 2) - 1) / 2000);
-                            var lat = data[i].order.lnglat[1] + (((Math.random() * 2) - 1) / 2000);
+                            var content = '<div style="width: 48px; height: 48px; position:relative; background: ' + color + ';"><b class="car-font" style="color: white;">' + order.id + '-' + order.passenger_num + '</b></div>';
+                            var lng = order.lnglat[0] + (((Math.random() * 2) - 1) / 2000);
+                            var lat = order.lnglat[1] + (((Math.random() * 2) - 1) / 2000);
                             markers.push(new AMap.Marker({
                                 content: content,
                                 offset: new AMap.Pixel(-24, -24),
