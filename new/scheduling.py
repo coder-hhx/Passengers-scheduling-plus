@@ -8,144 +8,104 @@ Contact: houhaixu_email@163.com
 Create Date: 2021/2/2
 -------------------------------------------------
 """
-import math
-import numpy as np
 from typing import List
 
-from sklearn.cluster import KMeans
-
+from new.caculate_utils import k_means, get_distance, DP, find_closest_obj
 from new.data_utils import load_data, push_data
 from new.models import Order, Car
 
 
-def get_distance(order: Order, car: Car):
+def has_unsolved_orders(orders):
     """
-    计算车与订单位置之间的距离
-    :param order: 订单对象
-    :param car: 车辆对象
-    :return: 距离（米）
-    """
-    radLat1 = order.lat * math.pi / 180
-    radLat2 = car.lat * math.pi / 180
-    a = radLat1 - radLat2
-    b = (order.lng - car.lng) * math.pi / 180
-    s = 2 * math.asin(
-        math.sqrt(math.pow(math.sin(a / 2), 2) + math.cos(radLat1) * math.cos(radLat2) * math.pow(math.sin(b / 2), 2)))
-    s = s * 6378.137
-    s = math.ceil(s * 10000) / 10
-    return s
-
-
-def DP(car: Car, dis_list: List[Order]):
-    """
-    动态规划，参考背包问题
-    :param car: 要分配的车
-    :param dis_list: 可被分配的订单列表
+    判断是否有为分配的订单
+    :param orders:
     :return:
     """
-    path = np.zeros((len(dis_list) + 1, car.sites + 1))
-    table = np.zeros(car.sites + 1)
-    for i in range(1, len(dis_list) + 1):
-        for j in range(car.sites, dis_list[i - 1].passenger_num, -1):
-            path[i, j] = 0
-            if table[j] < (table[j - dis_list[i - 1].passenger_num] + dis_list[i - 1].dis):
-                table[j] = table[j - dis_list[i - 1].passenger_num] + dis_list[i - 1].dis
-                path[i, j] = 1
-
-    r = []
-
-    i, j = len(dis_list), car.sites
-    while i > 0 and j > 0:
-        if path[i, j] == 1:
-            dis_list[i - 1].unsolved = False
-            r.append((dis_list[i - 1], car))
-            j -= dis_list[i - 1].passenger_num
-        i -= 1
-    return r
+    for order in orders:
+        if order.unsolved:
+            return True
+    return False
 
 
-def k_means(order_list: List[Order]):
-    """
-    聚类
-    :param order_list:
-    :return:
-    """
-    data = np.array([[order.lng, order.lat] for order in order_list])
-    k = round(len(data) / 5) + 1
-    model1 = KMeans(n_clusters=k, n_init=10)
-    model1.fit(data)
-    clusters = model1.predict(data)
-    centers = model1.cluster_centers_
-
-    the_maps = []
-    for index, center in enumerate(centers):
-        orders = [order_list[e] for e, i in enumerate(clusters) if i == index]
-        the_map = {
-            "id": index,
-            "coordinate": list(center),
-            "orders": orders
-        }
-        the_maps.append(the_map)
-    # the_maps.sort(key=take_coordinate, reverse=True)
-    return the_maps
+def get_dis_list(max_dis, car: Car, orders: List[Order]):
+    dis_list = []
+    for order in orders:
+        dis = get_distance(order.lng, order.lat, car.lng, car.lat)
+        if dis < max_dis and order.unsolved and car.surplus_sites >= order.passenger_num:
+            order.dis = max_dis - dis  # 方便一会儿动态规划算法，距离司机最近，等于最大距离-距离司机的距离 最大
+            dis_list.append(order)
+    return dis_list
 
 
-def receive_type_calculate(mode: int):
+def receive_type_calculate(order_list, car_list, max_distance):
     """
     接模式下，需计算司机位置
     :param mode: 加载模式
     :return:
     """
-    # TODO 使用动态规划之01背包问题算法进行计算
-    order_list, car_list, max_distance, _type = load_data(mode=mode)
 
     result = []  # 计算结果
 
-    for car in car_list:
-        dis_list: List[Order] = []  # 所有与该车距离小于最大距离的订单列表
-        for order in order_list:
-            dis = get_distance(order, car)
-            if dis < max_distance and order.unsolved:
-                order.dis = max_distance - dis  # 方便一会儿动态规划算法，距离司机最近，等于最大距离-距离司机的距离 最大
-                dis_list.append(order)
-        result.extend(DP(car, dis_list))
+    while has_unsolved_orders(order_list) and len(car_list) > 0:
+        maps = k_means(order_list)
+        if len(maps) == 0:
+            break
 
-    # for order in order_list:
-    #     min_dis = max_distance
-    #     min_car = None
-    #     for car in car_list:
-    #         dis = get_distance(order, car)
-    #         if min_dis > dis and car.surplus_sites > order.passenger_num:
-    #             min_dis = dis
-    #             min_car = car
-    #
-    #     if min_car:
-    #         order.unsolved = False
-    #         min_car.change_surplus_sites(order.passenger_num)
-    #         result.append((order, min_car))
+        while True:
+            if len(maps) == 0 or len(car_list) == 0:
+                break
+            center = maps.pop(0)
+            closest_car: Car = find_closest_obj(center, car_list)
+            dis_list: List[Order] = get_dis_list(max_distance, closest_car, order_list)
+            if dis_list:
+                result.extend(DP(closest_car, dis_list))
+                break
+            else:
+                car_list.remove(closest_car)
 
     push_data(result)
 
     return result
 
 
-def send_type_calculate(mode: int):
+def send_type_calculate(order_list, car_list, max_distance):
     """
     送模式下，不需计算司机位置
     :return:
     """
 
-    # TODO 从第一个订单和第一个车找，第一个车找完，再从剩下的订单和剩下的车找，依次类推
-    order_list, car_list, max_distance, _type = load_data(mode=mode)
+    result = []
+    while len(order_list) > 0 and len(car_list) > 0:
+        car_list.sort(key=lambda car: car.surplus_sites, reverse=True)
+        order_list.sort(key=lambda order: order.passenger_num, reverse=True)
+
+        order = order_list.pop(0)
+        car = car_list[0]
+        if car.surplus_sites > order.passenger_num:
+            result.append((order, car))
+            car.change_surplus_sites(order.passenger_num)
+            order.unsolved = False
+
+            order_list.sort(key=lambda obj_: get_distance(order.lng, order.lat, obj_.lng, obj_.lat))
+
+            for obj_ in order_list:
+                if get_distance(order.lng, order.lat, obj_.lng, obj_.lat) > max_distance:
+                    break
+                if obj_.passenger_num <= car.surplus_sites:
+                    result.append((obj_, car))
+                    car.change_surplus_sites(obj_.passenger_num)
+                    obj_.unsolved = False
+                    order_list.remove(obj_)
+
+        if car.surplus_sites == 0:
+            car_list.remove(car)
+
+    push_data(result)
+
+    return result
 
 
 if __name__ == '__main__':
-    order_list, car_list, max_distance, _type = load_data(mode=1)
-
-    min_car = car_list[0]
-
-    print(car_list[0].surplus_sites)
-
-    min_car.change_surplus_sites(1)
-
-    print(car_list[0].surplus_sites)
+    order_list, car_list, max_distance, type_ = load_data(mode=1)
+    result = send_type_calculate(order_list, car_list, max_distance)
+    print(result)

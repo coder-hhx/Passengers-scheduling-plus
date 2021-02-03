@@ -10,11 +10,13 @@ Create Date: 2021/1/31
 """
 
 import collections
+import copy
 import json
 
 from flask import Flask, render_template, jsonify
 
-from new.scheduling import receive_type_calculate
+from new.data_utils import receive_data, send_data, load_data
+from new.scheduling import receive_type_calculate, send_type_calculate
 from old.scheduling_tool import run
 
 app = Flask(__name__)
@@ -51,25 +53,64 @@ def old_arithmetic():
     })
 
 
-@app.route('/new_arithmetic')
-def new_arithmetic():
-    result = receive_type_calculate(mode=1)
+@app.route('/new_arithmetic/<mode>/')
+def new_arithmetic(mode):
+    order_list, car_list, max_distance, type_ = load_data(mode=int(mode))
 
-    data = []
-    lng = lat = count = 0
-    for ret in result:
-        data.append({
-            "order": {'id': ret[0].id_, 'lnglat': [ret[0].lng, ret[0].lat]},
-            "driver": {'id': ret[1].id_, 'lnglat': [ret[1].lng, ret[1].lat], 'site_num': ret[1].sites},
-            "passenger_num": ret[0].passenger_num
+    cars = copy.deepcopy(car_list)
+
+    if type_ == "receive":
+        result = receive_type_calculate(order_list, car_list, max_distance)
+        data = []
+        lng = lat = count = 0
+        for ret in result:
+            data.append({
+                "order": {'id': ret[0].id_, 'lnglat': [ret[0].lng, ret[0].lat]},
+                "driver": {'id': ret[1].id_, 'lnglat': [ret[1].lng, ret[1].lat], 'site_num': ret[1].sites},
+                "passenger_num": ret[0].passenger_num
+            })
+            lng += ret[0].lng + ret[1].lng
+            lat += ret[0].lat + ret[1].lat
+            count += 2
+
+        return jsonify({
+            'data': data,
+            'center': [lng / count, lat / count]
         })
-        lng += ret[0].lng + ret[1].lng
-        lat += ret[0].lat + ret[1].lat
-        count += 2
+    elif type_ == "send":
+        result = send_type_calculate(order_list, car_list, max_distance)
+        data = []
+        lng = lat = count = 0
+        for car in cars:
+            temp = []
+            for ret in result:
+                if ret[1].id_ == car.id_:
+                    temp.append({
+                        'id': ret[0].id_, 'lnglat': [ret[0].lng, ret[0].lat],
+                        'passenger_num': ret[0].passenger_num
+                    })
+                    lng += ret[0].lng
+                    lat += ret[0].lat
+                    count += 1
+
+            if len(temp) > 0:
+                data.append(temp)
+
+        return jsonify({
+            'data': data,
+            'center': [lng / count, lat / count]
+        })
+
+
+@app.route('/scene_change/<scene>/')
+def scene_change(scene):
+    if scene == "receive":
+        receive_data()
+    elif scene == "send":
+        send_data()
 
     return jsonify({
-        'data': data,
-        'center': [lng / count, lat / count]
+        'status': 200
     })
 
 
