@@ -12,9 +12,9 @@ from typing import List
 
 
 class Order(object):
-    __slots__ = ["id_", "passenger_num", "lng", "lat", "unsolved", "dis"]
+    __slots__ = ["id_", "passenger_num", "lng", "lat", "unsolved", "weight", "is_grab"]
 
-    def __init__(self, id_, passenger_num, lng, lat):
+    def __init__(self, id_, passenger_num, lng, lat, is_grab):
         """
         :param id_: 订单id
         :param passenger_num: 订单中的乘客数量
@@ -26,7 +26,8 @@ class Order(object):
         self.lng = lng
         self.lat = lat
         self.unsolved = True  # 未被分配车辆
-        self.dis = 0  # 该订单与某车之间的距离
+        self.weight = 0  # 该订单的优先级
+        self.is_grab = is_grab
 
 
 class Car(object):

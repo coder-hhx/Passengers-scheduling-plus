@@ -29,7 +29,10 @@ def load_data(mode: int):
     order_list: List[Order] = []  # 订单列表
 
     data = json.loads(r.get('data'))
-    max_distance = int(data["config"]["far_distance"])  # 最远距离
+    # max_distance = int(data["config"]["far_distance"])  # 最远距离
+    order_distance = int(data['config']['order_distance'])  # 订单最远距离
+    car_distance = int(data['config']['car_distance'])  # 车辆最远距离
+    reserve_rate = float(data['config']['reserve_rate'])  # 作为剩余比例
     type_ = data["config"]["type"]  # 类别
 
     if mode == 1:
@@ -39,7 +42,8 @@ def load_data(mode: int):
                     id_=int(order['id']),
                     passenger_num=int(order['size']),
                     lng=float(order['coordinate'][0]),
-                    lat=float(order['coordinate'][1])
+                    lat=float(order['coordinate'][1]),
+                    is_grab=int(order['is_grab'])
                 )
             )
     elif mode == 2:
@@ -50,7 +54,8 @@ def load_data(mode: int):
                         id_=int(order['id']),
                         passenger_num=1,
                         lng=float(order['coordinate'][0]),
-                        lat=float(order['coordinate'][1])
+                        lat=float(order['coordinate'][1]),
+                        is_grab=int(order['is_grab'])
                     )
                 )
 
@@ -75,7 +80,7 @@ def load_data(mode: int):
                 )
             )
 
-    return order_list, car_list, max_distance, type_
+    return order_list, car_list, type_, order_distance, car_distance, reserve_rate
 
 
 def push_data(result: List[Tuple[Order, Car]]):
@@ -83,13 +88,127 @@ def push_data(result: List[Tuple[Order, Car]]):
     r.lpush('table', str([((ret[0].id_, ret[1].id_), ret[0].passenger_num) for ret in result]))
 
 
-def receive_data(dis: int = 5000):
-    data_txt = '{"user_list": [{"id": 0, "coordinate": [104.05072191555561, 30.601844722095155], "size": 1}, {"id": 1, "coordinate": [104.00496562983494, 30.70074681444294], "size": 2}, {"id": 2, "coordinate": [104.14045553894448, 30.73300443419149], "size": 3}, {"id": 3, "coordinate": [104.02016267833693, 30.619050275402277], "size": 2}, {"id": 4, "coordinate": [104.13241229459545, 30.64683281862825], "size": 1}, {"id": 5, "coordinate": [104.05259526872707, 30.611761866491253], "size": 4}, {"id": 6, "coordinate": [104.115379614329, 30.70677969334144], "size": 2}, {"id": 7, "coordinate": [104.12193746985935, 30.724862334364683], "size": 4}, {"id": 8, "coordinate": [104.09090825803933, 30.728295883714857], "size": 1}, {"id": 9, "coordinate": [104.0285242479951, 30.614870159888227], "size": 2}, {"id": 10, "coordinate": [104.06284149961331, 30.70747397855058], "size": 1}, {"id": 11, "coordinate": [104.11987547144402, 30.627279410030678], "size": 2}, {"id": 12, "coordinate": [104.07503043588602, 30.637436189508534], "size": 2}, {"id": 13, "coordinate": [104.03356388083553, 30.745934287967504], "size": 1}, {"id": 14, "coordinate": [104.08864592890527, 30.65378357734492], "size": 3}, {"id": 15, "coordinate": [104.07171940097238, 30.72545910001263], "size": 5}, {"id": 16, "coordinate": [104.0287053083747, 30.712661078442444], "size": 5}, {"id": 17, "coordinate": [104.0366340603779, 30.676309665123235], "size": 4}, {"id": 18, "coordinate": [104.08848219455142, 30.748417271652695], "size": 2}, {"id": 19, "coordinate": [104.11455486424384, 30.603287106975106], "size": 1}], "driver_list":[{"driver_id": 0, "coordinate": [104.13310339290251, 30.64023468231509], "sites": 6}, {"driver_id": 1, "coordinate": [104.06858829295508, 30.684775516129474], "sites": 4}, {"driver_id": 2, "coordinate": [104.07634566390571, 30.67253660532822], "sites": 6}, {"driver_id": 3, "coordinate": [104.11986185147461, 30.65146266953304], "sites": 4}, {"driver_id": 4, "coordinate": [104.01122446092239, 30.636035430082305], "sites": 4}, {"driver_id": 5, "coordinate": [104.0650708257392, 30.65331807839672], "sites": 6}, {"driver_id": 6, "coordinate": [104.13078679816792, 30.716117616265876], "sites": 6}, {"driver_id": 7, "coordinate": [104.10029849302218, 30.606095462242887], "sites": 4}, {"driver_id": 8, "coordinate": [104.13261988469455, 30.673075654782593], "sites": 6}, {"driver_id": 9, "coordinate": [104.05631982063983, 30.716668079749933], "sites": 6}, {"driver_id": 10, "coordinate": [104.0129599489303, 30.706041997085503], "sites": 4}, {"driver_id": 11, "coordinate": [104.04563538964011, 30.718795538285743], "sites": 4}, {"driver_id": 12, "coordinate": [104.11286262900849, 30.71735595215192], "sites": 6}, {"driver_id": 13, "coordinate": [104.0769169935041, 30.606079684390995], "sites": 4}, {"driver_id": 14, "coordinate": [104.13131856755234, 30.684256613919015], "sites": 4}, {"driver_id": 15, "coordinate": [104.07665267505828, 30.628217281276648], "sites": 6}, {"driver_id": 16, "coordinate": [104.116557362039, 30.658893367870643], "sites": 6}, {"driver_id": 17, "coordinate": [104.09161717386395, 30.729267126666507],"sites": 4}, {"driver_id": 18, "coordinate": [104.07466188480925, 30.608231721076802], "sites": 4}, {"driver_id": 19,"coordinate": [104.03904389827431, 30.65543276111534], "sites": 6}, {"driver_id": 20, "coordinate": [104.05508727319406, 30.603201278268482], "sites": 6}, {"driver_id": 21, "coordinate": [104.09974349492846, 30.641880551833964], "sites": 6}, {"driver_id": 22, "coordinate": [104.13738981820846, 30.732496049099296], "sites": 6}, {"driver_id": 23, "coordinate": [104.08907297086817, 30.67219050110285], "sites": 6}, {"driver_id": 24, "coordinate": [104.103402806249, 30.67335282780415], "sites": 4}], "config": {"far_distance": "' + str(
-        dis) + '", "type": "receive"}}'
+def receive_data():
+    data_txt = '''  {
+                        "user_list": [{
+                            "size": "1",
+                            "coordinate": ["104.07565", "30.664052"],
+                            "id": "1",
+                            "is_grab": 0
+                        }, {
+                            "size": "3",
+                            "coordinate": ["104.086121", "30.66383"],
+                            "id": "2",
+                            "is_grab": 0
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.095305", "30.659031"],
+                            "id": "3",
+                            "is_grab": 0
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.099425", "30.648473"],
+                            "id": "4",
+                            "is_grab": 0
+                        }, {
+                            "size": "4",
+                            "coordinate": ["104.086464", "30.64094"],
+                            "id": "5",
+                            "is_grab": 0
+                        }, {
+                            "size": "3",
+                            "coordinate": ["104.078654", "30.653789"],
+                            "id": "6",
+                            "is_grab": 0
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.072903", "30.64574"],
+                            "id": "7",
+                            "is_grab": 0
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.073332", "30.669072"],
+                            "id": "8",
+                            "is_grab": 1
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.085349", "30.670327"],
+                            "id": "9",
+                            "is_grab": 1
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.103631", "30.668777"],
+                            "id": "10",
+                            "is_grab": 1
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.108265", "30.653051"],
+                            "id": "11",
+                            "is_grab": 1
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.069384", "30.637396"],
+                            "id": "12",
+                            "is_grab": 1
+                        }, {
+                            "size": "5",
+                            "coordinate": ["104.089469", "30.640202"],
+                            "id": "13",
+                            "is_grab": 0
+                        }],
+                        "gid": "152",
+                        "driver_list": [{
+                            "driver_id": "1",
+                            "coordinate": ["104.09655", "30.65343"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "2",
+                            "coordinate": ["104.075736", "30.650107"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "3",
+                            "coordinate": ["104.0808", "30.64707"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "4",
+                            "coordinate": ["104.077281", "30.658662"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "5",
+                            "coordinate": ["104.09685", "30.644411"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "6",
+                            "coordinate": ["104.092902", "30.656964"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "7",
+                            "coordinate": ["104.08552", "30.664864"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "8",
+                            "coordinate": ["104.076766", "30.640571"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "9",
+                            "coordinate": ["104.070843", "30.652312"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "10",
+                            "coordinate": ["104.090069", "30.640497"],
+                            "sites": 4
+                        }],
+                        "config": {
+                            "far_distance": "10000",
+                            "order_distance": "2000",
+                            "car_distance": "2000",
+                            "reserve_rate": "0.2",
+                            "type": "receive"
+                        }
+                    }'''
     r.set('data', data_txt)
 
 
-def send_data(dis: int = 5000):
-    data_txt = '{"user_list": [{"id": 0, "coordinate": [104.05072191555561, 30.601844722095155], "size": 1}, {"id": 1, "coordinate": [104.00496562983494, 30.70074681444294], "size": 2}, {"id": 2, "coordinate": [104.14045553894448, 30.73300443419149], "size": 3}, {"id": 3, "coordinate": [104.02016267833693, 30.619050275402277], "size": 2}, {"id": 4, "coordinate": [104.13241229459545, 30.64683281862825], "size": 1}, {"id": 5, "coordinate": [104.05259526872707, 30.611761866491253], "size": 4}, {"id": 6, "coordinate": [104.115379614329, 30.70677969334144], "size": 2}, {"id": 7, "coordinate": [104.12193746985935, 30.724862334364683], "size": 4}, {"id": 8, "coordinate": [104.09090825803933, 30.728295883714857], "size": 1}, {"id": 9, "coordinate": [104.0285242479951, 30.614870159888227], "size": 2}, {"id": 10, "coordinate": [104.06284149961331, 30.70747397855058], "size": 1}, {"id": 11, "coordinate": [104.11987547144402, 30.627279410030678], "size": 2}, {"id": 12, "coordinate": [104.07503043588602, 30.637436189508534], "size": 2}, {"id": 13, "coordinate": [104.03356388083553, 30.745934287967504], "size": 1}, {"id": 14, "coordinate": [104.08864592890527, 30.65378357734492], "size": 3}, {"id": 15, "coordinate": [104.07171940097238, 30.72545910001263], "size": 5}, {"id": 16, "coordinate": [104.0287053083747, 30.712661078442444], "size": 5}, {"id": 17, "coordinate": [104.0366340603779, 30.676309665123235], "size": 4}, {"id": 18, "coordinate": [104.08848219455142, 30.748417271652695], "size": 2}, {"id": 19, "coordinate": [104.11455486424384, 30.603287106975106], "size": 1}], "driver_list":[{"driver_id": 0, "coordinate": [104.13310339290251, 30.64023468231509], "sites": 6}, {"driver_id": 1, "coordinate": [104.06858829295508, 30.684775516129474], "sites": 4}, {"driver_id": 2, "coordinate": [104.07634566390571, 30.67253660532822], "sites": 6}, {"driver_id": 3, "coordinate": [104.11986185147461, 30.65146266953304], "sites": 4}, {"driver_id": 4, "coordinate": [104.01122446092239, 30.636035430082305], "sites": 4}, {"driver_id": 5, "coordinate": [104.0650708257392, 30.65331807839672], "sites": 6}, {"driver_id": 6, "coordinate": [104.13078679816792, 30.716117616265876], "sites": 6}, {"driver_id": 7, "coordinate": [104.10029849302218, 30.606095462242887], "sites": 4}, {"driver_id": 8, "coordinate": [104.13261988469455, 30.673075654782593], "sites": 6}, {"driver_id": 9, "coordinate": [104.05631982063983, 30.716668079749933], "sites": 6}, {"driver_id": 10, "coordinate": [104.0129599489303, 30.706041997085503], "sites": 4}, {"driver_id": 11, "coordinate": [104.04563538964011, 30.718795538285743], "sites": 4}, {"driver_id": 12, "coordinate": [104.11286262900849, 30.71735595215192], "sites": 6}, {"driver_id": 13, "coordinate": [104.0769169935041, 30.606079684390995], "sites": 4}, {"driver_id": 14, "coordinate": [104.13131856755234, 30.684256613919015], "sites": 4}, {"driver_id": 15, "coordinate": [104.07665267505828, 30.628217281276648], "sites": 6}, {"driver_id": 16, "coordinate": [104.116557362039, 30.658893367870643], "sites": 6}, {"driver_id": 17, "coordinate": [104.09161717386395, 30.729267126666507],"sites": 4}, {"driver_id": 18, "coordinate": [104.07466188480925, 30.608231721076802], "sites": 4}, {"driver_id": 19,"coordinate": [104.03904389827431, 30.65543276111534], "sites": 6}, {"driver_id": 20, "coordinate": [104.05508727319406, 30.603201278268482], "sites": 6}, {"driver_id": 21, "coordinate": [104.09974349492846, 30.641880551833964], "sites": 6}, {"driver_id": 22, "coordinate": [104.13738981820846, 30.732496049099296], "sites": 6}, {"driver_id": 23, "coordinate": [104.08907297086817, 30.67219050110285], "sites": 6}, {"driver_id": 24, "coordinate": [104.103402806249, 30.67335282780415], "sites": 4}], "config": {"far_distance": "' + str(
-        dis) + '", "type": "send"}}'
+def send_data():
+    data_txt = '{"user_list":[{"size":"2","coordinate":["104.085177","30.651646"],"id":"1","is_grab":0}],"gid":"152","driver_list":[{"driver_id":"9","coordinate":["104.085177","30.651646"],"sites":4},{"driver_id":"11","coordinate":["104.085177","30.651646"],"sites":6},{"driver_id":"59","coordinate":["104.085177","30.651646"],"sites":4},{"driver_id":"71","coordinate":["104.085177","30.651646"],"sites":4}],"config":{"far_distance":"10000","order_distance":"2000","car_distance":"2000","reserve_rate":"0.2","type":"send"}}'
     r.set('data', data_txt)
