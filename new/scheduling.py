@@ -9,10 +9,9 @@ Create Date: 2021/2/2
 -------------------------------------------------
 """
 import math
-import copy
 from typing import List
 
-from new.caculate_utils import k_means, get_distance, DP, find_closest_obj, find_closest_cluster
+from new.caculate_utils import k_means, get_distance, DP, find_closest_obj
 from new.data_utils import load_data, push_data
 from new.models import Order, Car
 

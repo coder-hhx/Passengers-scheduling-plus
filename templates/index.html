@@ -79,7 +79,7 @@
     <div class="input-item">
         <input type="button" class="btn" value="接场景" onClick="scene_change('receive')"/>
         <input type="button" class="btn" value="送场景" onClick="scene_change('send')"/>
-        <input type="button" class="btn" value="开始调度" onClick="new_arithmetic()"/>
+        <input type="button" class="btn" value="开始调度" onClick="schedule()"/>
     </div>
     {#    <div class="input-item">#}
     {#    </div>#}
@@ -170,8 +170,8 @@
 
     let polylines = [];
     let markers = [];
-    function new_arithmetic() {
-        $.ajax('/new_arithmetic/', {
+    function schedule() {
+        $.ajax('/schedule/', {
             type: "GET",
             dataType: "json",
             success: function (resp) {

@@ -22,8 +22,8 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/new_arithmetic/')
-def new_arithmetic():
+@app.route('/schedule/')
+def schedule():
     result = run(debug=True)
 
     return jsonify({
