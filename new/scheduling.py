@@ -117,21 +117,21 @@ def abandon_order(orders: List[Order], center: List[float], max_dis: int):
     :param max_dis:
     :return:
     """
-    new_orders = copy.copy(orders)
+    new_orders = []
     for order in orders:
         order.weight = ((max_dis - get_distance(center[0], center[1], order.lng, order.lat)) / max_dis) * 0.01 \
-                            + (0.9 * order.passenger_num) * (1 - order.is_grab)
+                       + (0.9 * order.passenger_num) * (1 - order.is_grab)
         if order.is_grab == 0:
             new_orders.append(order)
         if order.is_grab == 1:
             if get_distance(center[0], center[1], order.lng, order.lat) <= max_dis:
-                new_orders.remove(order)
+                new_orders.append(order)
     return new_orders
 
 
-def receive_type_calculate(orders, cars, order_distance, car_distance):
+def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
     """
-    接模式下，需计算司机位置
+    乘客调度
     :param mode: 加载模式
     :return:
     """
@@ -153,14 +153,44 @@ def receive_type_calculate(orders, cars, order_distance, car_distance):
         closest_car: Car = find_closest_obj(cluster, cars)
         cluster['orders'] = abandon_order(cluster['orders'], cluster['coordinate'], order_distance)
         cluster['car'] = closest_car
-        if not is_all_grab_orders(cluster['orders']):
+        if type_ == 'receive':
+            if not is_all_grab_orders(cluster['orders']):
+                result.extend(DP(closest_car, cluster["orders"]))
+            else:
+                if get_distance(cluster['coordinate'][0], cluster['coordinate'][1], closest_car.lng,
+                                closest_car.lat) <= car_distance:
+                    result.extend(DP(closest_car, cluster["orders"]))
+        else:
             result.extend(DP(closest_car, cluster["orders"]))
 
-    for order in in_orders:
+    for order in in_orders:  # 一轮优化
         if order.unsolved:
             clusters.sort(
                 key=lambda cluster: get_distance(order.lng, order.lat, cluster['coordinate'][0],
-                                                 cluster['coordinate'][1]), reverse=True)
+                                                 cluster['coordinate'][1]))
+            for cluster in clusters:
+                if cluster['car'].sites >= order.passenger_num:
+                    cluster['car'].orders.append(order)
+                    cluster['car'].change_surplus_sites(order.passenger_num)
+                    cluster['car'].orders.sort(key=lambda order: order.passenger_num, reverse=True)
+                    result.append((order, cluster['car']))
+                    order.unsolved = False
+                    while cluster['car'].surplus_sites < 0:
+                        o = cluster['car'].orders.pop()
+                        o.unsolved = True
+                        cluster['car'].surplus_sites += o.passenger_num
+                        for ret in result:
+                            if ret[0].id_ == o.id_ and ret[1].id_ == cluster['car'].id_:
+                                result.remove(ret)
+                                break
+                    if not order.unsolved:
+                        break
+
+    for order in in_orders:  # 二轮优化
+        if order.unsolved:
+            clusters.sort(
+                key=lambda cluster: get_distance(order.lng, order.lat, cluster['coordinate'][0],
+                                                 cluster['coordinate'][1]))
             for cluster in clusters:
                 if cluster['car'].surplus_sites >= order.passenger_num:
                     order.unsolved = False
@@ -169,73 +199,105 @@ def receive_type_calculate(orders, cars, order_distance, car_distance):
                     result.append((order, cluster['car']))
                     break
 
-    # for order in in_orders:  # 将范围内的没有被分配的订单，进行分配
-    #     if order.unsolved:
-    #         clusters.sort(
-    #             key=lambda cluster: get_distance(order.lng, order.lat, cluster['coordinate'][0],
-    #                                              cluster['coordinate'][1]), reverse=True)
-    #         for cluster in clusters:
-    #             if cluster['car'].sites >= order.passenger_num:
-    #                 cluster['orders'].append(order)
-    #                 cluster['car'].change_surplus_sites(order.passenger_num)
-    #                 cluster['orders'].sort(key=lambda order: order.passenger_num)
-    #                 result.append((order, cluster['car']))
-    #                 while cluster['car'].surplus_sites < 0:
-    #                     o = cluster['orders'].pop()
-    #                     o.unsolved = True
-    #                     cluster['car'].surplus_sites += o.passenger_num
-    #                     for ret in result:
-    #                         if ret[0].id_ == o.id_ and ret[1].id_ == cluster['car'].id_:
-    #                             result.remove(ret)
-    #                             break
-
-    push_data(result)
-
-    return result
-
-
-def send_type_calculate(order_list, car_list, max_distance):
-    """
-    送模式下，不需计算司机位置
-    :return:
-    """
-
-    result = []
-    while len(order_list) > 0 and len(car_list) > 0:
-        car_list.sort(key=lambda car: car.surplus_sites, reverse=True)
-        order_list.sort(key=lambda order: order.passenger_num, reverse=True)
-
-        order = order_list.pop(0)
-        car = car_list[0]
-        if car.surplus_sites > order.passenger_num:
-            result.append((order, car))
-            car.change_surplus_sites(order.passenger_num)
+    for order in in_orders:  # 三轮优化
+        if order.unsolved:
+            clusters.sort(
+                key=lambda cluster: get_distance(order.lng, order.lat, cluster['coordinate'][0],
+                                                 cluster['coordinate'][1]))
             order.unsolved = False
+            while order.passenger_num > 0:
+                for cluster in clusters:
+                    if cluster['car'].surplus_sites > 0:
+                        o = Order(
+                            id_=order.id_,
+                            passenger_num=cluster['car'].surplus_sites,
+                            lng=order.lng,
+                            lat=order.lat,
+                            is_grab=order.is_grab
+                        )
+                        order.passenger_num -= o.passenger_num
+                        cluster['car'].orders.append(o)
+                        cluster['car'].change_surplus_sites(o.passenger_num)
+                        result.append((o, cluster['car']))
+                        break
 
-            order_list.sort(key=lambda obj_: get_distance(order.lng, order.lat, obj_.lng, obj_.lat))
-
-            for obj_ in order_list:
-                if get_distance(order.lng, order.lat, obj_.lng, obj_.lat) > max_distance:
+    for cluster in clusters:  # 范围外抢单
+        for order in cluster['orders']:
+            if order.is_grab == 0 and order.unsolved:
+                if cluster['car'].surplus_sites >= order.passenger_num:
+                    order.unsolved = False
+                    cluster['car'].orders.append(order)
+                    cluster['car'].change_surplus_sites(order.passenger_num)
+                    result.append((order, cluster['car']))
                     break
-                if obj_.passenger_num <= car.surplus_sites:
-                    result.append((obj_, car))
-                    car.change_surplus_sites(obj_.passenger_num)
-                    obj_.unsolved = False
-                    order_list.remove(obj_)
 
-        if car.surplus_sites == 0:
-            car_list.remove(car)
+        # 重新计算质心
+        # if len(cluster['car'].orders) > 0:
+        #     lng = lat = 0
+        #     for order in cluster['car'].orders:
+        #         lng += order.lng
+        #         lat += order.lat
+        #     cluster['coordinate'] = [lng / len(cluster['car'].orders), lat / len(cluster['car'].orders)]
+
+    for order in out_orders:  # 抢单二轮优化
+        if order.unsolved:
+            clusters.sort(
+                key=lambda cluster: get_distance(order.lng, order.lat, cluster['coordinate'][0],
+                                                 cluster['coordinate'][1]))
+            for cluster in clusters:
+                if cluster['car'].surplus_sites >= order.passenger_num and \
+                        get_distance(cluster['coordinate'][0], cluster['coordinate'][1], order.lng,
+                                     order.lat) <= order_distance:
+                    order.unsolved = False
+                    cluster['car'].orders.append(order)
+                    cluster['car'].change_surplus_sites(order.passenger_num)
+                    result.append((order, cluster['car']))
+                    break
 
     push_data(result)
 
-    return result
+    if debug:
+        data = []
+        if type_ == 'receive':
+            for car in cars:
+                temp = []
+                for ret in result:
+                    if ret[1].id_ == car.id_:
+                        temp.append({
+                            'order': {
+                                'id': ret[0].id_, 'lnglat': [ret[0].lng, ret[0].lat],
+                                'passenger_num': ret[0].passenger_num
+                            }
+                        })
+
+                if len(temp) > 0:
+                    data.append({
+                        'car': {'id': car.id_, 'sites': car.sites, 'lnglat': [car.lng, car.lat]},
+                        'orders': temp
+                    })
+        else:
+            for cluster in clusters:
+                temp = []
+                for order in cluster['car'].orders:
+                    temp.append({
+                        'order': {
+                            'id': order.id_, 'lnglat': [order.lng, order.lat],
+                            'passenger_num': order.passenger_num
+                        }
+                    })
+                if len(temp) > 0:
+                    data.append({
+                        'car': {'id': cluster['car'].id_, 'sites': cluster['car'].sites,
+                                'lnglat': [cluster['coordinate'][0], cluster['coordinate'][1]]},
+                        'orders': temp
+                    })
+
+        return data
 
 
-def schedule(mode):
-    order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data(mode=int(mode))
+def run(debug):
+    order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data()
     available_cars, available_orders = preprocess_data(car_list, order_list, reserve_rate)
-    return receive_type_calculate(available_orders, available_cars, order_distance, car_distance)
-
-
-if __name__ == '__main__':
-    schedule(1)
+    ret = schedule(available_orders, available_cars, order_distance, car_distance, type_, debug=debug)
+    if debug:
+        return ret

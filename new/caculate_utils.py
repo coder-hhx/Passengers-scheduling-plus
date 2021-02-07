@@ -69,7 +69,7 @@ def DP(car: Car, dis_list: List[Order]):
         for i in range(1, len(dis_list) + 1):
             for j in range(car.surplus_sites, dis_list[i - 1].passenger_num - 1, -1):
                 path[i, j] = 0
-                if table[j] < (table[j - dis_list[i - 1].passenger_num] + dis_list[i - 1].weight):
+                if table[j] < (table[j - dis_list[i - 1].passenger_num] + dis_list[i - 1].weight) and dis_list[i - 1].is_grab == 0:
                     table[j] = table[j - dis_list[i - 1].passenger_num] + dis_list[i - 1].weight
                     path[i, j] = 1
 
@@ -92,14 +92,15 @@ def k_means(order_list: List[Order], k):
     :return:
     """
     data = np.array([[order.lng, order.lat] for order in order_list])
-    # model1 = KMeans(n_clusters=k, max_iter=1000)
-    # model1.fit(data)
-    # clusters = model1.predict(data)
-    # centers = model1.cluster_centers_
+    model1 = KMeans(n_clusters=k, max_iter=500, init='random', n_init=10)
+    model1.fit(data)
+    clusters = model1.predict(data)
+    centers = model1.cluster_centers_
 
-    centers, clusters = biKmeans(data, k)
-    centers = np.array([i.A.tolist()[0] for i in centers])
-    clusters = clusters[:, 0].A[:, 0]
+    # 二分K-means
+    # centers, clusters = biKmeans(data, k)
+    # centers = np.array([i.A.tolist()[0] for i in centers])
+    # clusters = clusters[:, 0].A[:, 0]
 
 
     the_maps = []
