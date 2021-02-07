@@ -14,7 +14,7 @@ from typing import List, Tuple
 
 import redis
 
-from new.models import Car, Order
+from schedule_utils.models import Car, Order
 
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 

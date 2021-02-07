@@ -11,8 +11,8 @@ Create Date: 2021/1/31
 
 from flask import Flask, render_template, jsonify
 
-from new.data_utils import receive_data, send_data, load_data
-from new.scheduling import run
+from schedule_utils.data_utils import receive_data, send_data, load_data
+from schedule_utils.scheduling import run
 
 app = Flask(__name__)
 

@@ -11,9 +11,9 @@ Create Date: 2021/2/2
 import math
 from typing import List
 
-from new.caculate_utils import k_means, get_distance, DP, find_closest_obj
-from new.data_utils import load_data, push_data
-from new.models import Order, Car
+from schedule_utils.caculate_utils import k_means, get_distance, DP, find_closest_obj
+from schedule_utils.data_utils import load_data, push_data
+from schedule_utils.models import Order, Car
 
 
 def get_cars_sites_num(cars: List[Car]):

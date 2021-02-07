@@ -14,9 +14,9 @@ from typing import List
 import numpy as np
 from sklearn.cluster import KMeans
 
-from new.BiKmeans import biKmeans
-from new.data_utils import load_data
-from new.models import Order, Car
+from schedule_utils.BiKmeans import biKmeans
+from schedule_utils.data_utils import load_data
+from schedule_utils.models import Order, Car
 
 
 def has_solved_orders(orders):
