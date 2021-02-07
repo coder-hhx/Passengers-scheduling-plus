@@ -70,7 +70,7 @@ def load_data():
 
 
 def push_data(result: List[Tuple[Order, Car]]):
-    r.lpush('table', str([((ret[0].id_, ret[1].id_), ret[0].passenger_num) for ret in result]))
+    r.lpush('table', json.dumps([[[ret[0].id_, ret[1].id_], ret[0].passenger_num] for ret in result]))
 
 
 def receive_data():

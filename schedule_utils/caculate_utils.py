@@ -92,7 +92,7 @@ def k_means(order_list: List[Order], k):
     :return:
     """
     data = np.array([[order.lng, order.lat] for order in order_list])
-    model1 = KMeans(n_clusters=k, max_iter=500, init='random', n_init=10)
+    model1 = KMeans(n_clusters=k, max_iter=500, init='random', n_init=10, random_state=10)
     model1.fit(data)
     clusters = model1.predict(data)
     centers = model1.cluster_centers_
