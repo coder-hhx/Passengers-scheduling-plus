@@ -310,4 +310,4 @@ def send_data():
                             "type": "send"
                         }
                     }'''
-    r.set('data', data_txt)
+    r.lpush('data', data_txt)
