@@ -294,9 +294,13 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
         return data
 
 
-def run(debug):
+def run(debug=False):
     order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data()
     available_cars, available_orders = preprocess_data(car_list, order_list, reserve_rate)
     ret = schedule(available_orders, available_cars, order_distance, car_distance, type_, debug=debug)
     if debug:
         return ret
+
+
+if __name__ == '__main__':
+    run()

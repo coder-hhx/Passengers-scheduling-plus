@@ -36,9 +36,11 @@ def scene_change(scene):
     if scene == "receive":
         receive_data()
         order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data()
+        receive_data()
     else:
         send_data()
         order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data()
+        send_data()
 
     orders = [{"lnglat": [order.lng, order.lat], "id": order.id_, "passenger_num": order.passenger_num} for order in
               order_list]

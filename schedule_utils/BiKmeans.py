@@ -91,24 +91,3 @@ def biKmeans(dataSet, k, distMeas=distEclud):
         clusterAssment[np.nonzero(clusterAssment[:, 0].A == bestCentToSplit)[0], :] = bestClustAss
     return centList, clusterAssment
 
-# if __name__ == '__main__':
-#     order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data(mode=int(1))
-#     available_cars, available_orders = preprocess_data(car_list, order_list, reserve_rate)
-#     data = np.array([[order.lng, order.lat] for order in available_orders])
-#     centers, clusters = biKmeans(data, 6)
-#     centroids = np.array([i.A.tolist()[0] for i in centers])
-#
-#     y_kmeans = clusters[:, 0].A[:, 0]
-#
-#     print(centroids)
-#     print()
-#     print(y_kmeans)
-#
-#     model1 = KMeans(n_clusters=6, max_iter=1000)
-#     model1.fit(data)
-#     clusters = model1.predict(data)
-#     print("=======================")
-#     centers = model1.cluster_centers_
-#     print(centers)
-#     print()
-#     print(clusters)

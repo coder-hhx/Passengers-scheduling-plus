@@ -27,7 +27,7 @@ def load_data():
     car_list: List[Car] = []  # 车辆列表
     order_list: List[Order] = []  # 订单列表
 
-    data = json.loads(r.get('data'))
+    data = json.loads(r.rpop('data'))
     # max_distance = int(data["config"]["far_distance"])  # 最远距离
     order_distance = int(data['config']['order_distance'])  # 订单最远距离
     car_distance = int(data['config']['car_distance'])  # 车辆最远距离
@@ -190,7 +190,7 @@ def receive_data():
                             "type": "receive"
                         }
                     }'''
-    r.set('data', data_txt)
+    r.lpush('data', data_txt)
 
 
 def send_data():
