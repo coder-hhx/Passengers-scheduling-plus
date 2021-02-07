@@ -18,10 +18,17 @@
             padding: 0;
         }
 
-        .car-bg {
+        .car-bg-1 {
             width: 48px;
             height: 48px;
-            background: url("/static/img/car.png");
+            background: url("/static/img/car1.png");
+            position: relative;
+        }
+
+        .car-bg-2 {
+            width: 48px;
+            height: 48px;
+            background: url("/static/img/car2.png");
             position: relative;
         }
 
@@ -33,17 +40,24 @@
             height: 48px;
             top: 0;
             left: 0;
-            color: #fc4700;
-            font-size: 20px;
+            color: white;
+            font-size: 22px;
             bottom: 0;
             right: 0;
             margin: auto;
         }
 
-        .p-bg {
+        .p-bg-1 {
             width: 48px;
             height: 48px;
-            background: url("/static/img/people.png");
+            background: url("/static/img/p1.png");
+            position: relative;
+        }
+
+        .p-bg-2 {
+            width: 48px;
+            height: 48px;
+            background: url("/static/img/p2.png");
             position: relative;
         }
 
@@ -56,7 +70,7 @@
             top: 0;
             left: 0;
             color: black;
-            font-size: 20px;
+            font-size: 22px;
             bottom: 0;
             right: 0;
             margin: auto;
@@ -131,7 +145,10 @@
         return '#' + Math.floor(Math.random() * 0xffffff).toString(16);
     }
 
+    let type = "";
+
     function scene_change(scene) {
+        type = scene;
         $.ajax('/scene_change/' + scene + '/', {
             type: "GET",
             dataType: "json",
@@ -144,17 +161,26 @@
                     let cars = resp.cars;
                     let orders = resp.orders;
                     let markers = [];
-                    for (let i = 0; i < cars.length; i++) {
-                        let content = '<div class="car-bg"><b class="car-font">' + cars[i].id + '-' + cars[i].site_num + '</b></div>';
-                        markers.push(new AMap.Marker({
-                            content: content,
-                            offset: new AMap.Pixel(-24, -24),
-                            position: cars[i].lnglat,
-                        }));
+                    if (scene === "receive") {
+                        console.log(scene);
+                        for (let i = 0; i < cars.length; i++) {
+                            let content = '<div class="car-bg-1"><b class="car-font">' + cars[i].id + '-' + cars[i].site_num + '</b></div>';
+                            markers.push(new AMap.Marker({
+                                content: content,
+                                offset: new AMap.Pixel(-24, -24),
+                                position: cars[i].lnglat,
+                            }));
+                        }
                     }
 
+
                     for (let i = 0; i < orders.length; i++) {
-                        let content = '<div class="p-bg"><b class="p-font">' + orders[i].id + '-' + orders[i].passenger_num + '</b></div>';
+                        let content = "";
+                        if (orders[i].is_grab === 0) {
+                            content = '<div class="p-bg-2"><b class="p-font">' + orders[i].id + '-' + orders[i].passenger_num + '</b></div>';
+                        } else {
+                            content = '<div class="p-bg-1"><b class="p-font">' + orders[i].id + '-' + orders[i].passenger_num + '</b></div>';
+                        }
                         markers.push(new AMap.Marker({
                             content: content,
                             offset: new AMap.Pixel(-24, -24),
@@ -170,11 +196,13 @@
 
     let polylines = [];
     let markers = [];
+
     function schedule() {
         $.ajax('/schedule/', {
             type: "GET",
             dataType: "json",
             success: function (resp) {
+                console.log(type);
                 map.remove(polylines);
                 map.remove(markers);
                 polylines = [];
@@ -183,20 +211,22 @@
                 for (let i = 0; i < data.length; i++) {
                     let color = getRandomColor();
                     let car = data[i].car;
-                    let content = '<div style="width: 48px; height: 48px; position:relative; background: ' + color + ';"><b class="car-font" style="color: white;">' + car.id + '-' + car.sites + '</b></div>';
-                    markers.push(new AMap.Marker({
-                        content: content,
-                        offset: new AMap.Pixel(-24, -24),
-                        position: car.lnglat,
-                    }));
+                    if (type === 'send') {
+                        let content = '<div class="car-bg-2"><b class="car-font">' + car.id + '-' + car.sites + '</b></div>';
+                        markers.push(new AMap.Marker({
+                            content: content,
+                            offset: new AMap.Pixel(-24, -24),
+                            position: car.lnglat,
+                        }));
+                    }
                     for (let j = 0; j < data[i].orders.length; j++) {
                         let order = data[i].orders[j].order;
-                        let content = '<div style="width: 48px; height: 48px; position:relative; border-radius: 50%; background: ' + color + ';"><b class="car-font" style="color: white;">' + order.id + '-' + order.passenger_num + '</b></div>';
+                        {#let content = '<div style="width: 48px; height: 48px; position:relative; border-radius: 50%; background: ' + color + ';"><b class="car-font" style="color: white;">' + order.id + '-' + order.passenger_num + '</b></div>';
                         markers.push(new AMap.Marker({
                             content: content,
                             offset: new AMap.Pixel(-24, -24),
                             position: order.lnglat,
-                        }));
+                        }));#}
 
                         polylines.push(new AMap.Polyline({
                             path: [car.lnglat, order.lnglat],
@@ -206,7 +236,7 @@
                         }));
                     }
                 }
-                map.add(markers)
+                map.add(markers);
                 map.add(polylines);
 
                 map.setCenter(resp.center)

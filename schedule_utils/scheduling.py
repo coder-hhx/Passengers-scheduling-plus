@@ -136,10 +136,8 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
     """
 
     result = []  # 计算结果
-
     in_orders = []  # 范围内订单
     out_orders = []  # 超出范围的订单
-
     for order in orders:
         if order.is_grab == 0:
             in_orders.append(order)
@@ -231,12 +229,12 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
                     break
 
         # 重新计算质心
-        # if len(cluster['car'].orders) > 0:
-        #     lng = lat = 0
-        #     for order in cluster['car'].orders:
-        #         lng += order.lng
-        #         lat += order.lat
-        #     cluster['coordinate'] = [lng / len(cluster['car'].orders), lat / len(cluster['car'].orders)]
+        if len(cluster['car'].orders) > 0:
+            lng = lat = 0
+            for order in cluster['car'].orders:
+                lng += order.lng
+                lat += order.lat
+            cluster['coordinate'] = [lng / len(cluster['car'].orders), lat / len(cluster['car'].orders)]
 
     for order in out_orders:  # 抢单二轮优化
         if order.unsolved:

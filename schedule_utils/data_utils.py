@@ -140,6 +140,46 @@ def receive_data():
                             "coordinate": ["104.089469", "30.640202"],
                             "id": "13",
                             "is_grab": 0
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.086658", "30.652903"],
+                            "id": "14",
+                            "is_grab": 0
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.075113", "30.659585"],
+                            "id": "15",
+                            "is_grab": 0
+                        }, {
+                            "size": "3",
+                            "coordinate": ["104.096228", "30.655635"],
+                            "id": "16",
+                            "is_grab": 0
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.082366", "30.659917"],
+                            "id": "17",
+                            "is_grab": 0
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.058634", "30.663203"],
+                            "id": "18",
+                            "is_grab": 1
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.061981", "30.644522"],
+                            "id": "19",
+                            "is_grab": 1
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.055716", "30.641347"],
+                            "id": "20",
+                            "is_grab": 1
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.049793", "30.652349"],
+                            "id": "21",
+                            "is_grab": 1
                         }],
                         "gid": "152",
                         "driver_list": [{
@@ -182,6 +222,46 @@ def receive_data():
                             "driver_id": "10",
                             "coordinate": ["104.090069", "30.640497"],
                             "sites": 4
+                        }, {
+                            "driver_id": "11",
+                            "coordinate": ["104.086379", "30.667116"],
+                            "sites": 5
+                        }, {
+                            "driver_id": "12",
+                            "coordinate": ["104.109295", "30.662834"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "13",
+                            "coordinate": ["104.063719", "30.668075"],
+                            "sites": 8
+                        }, {
+                            "driver_id": "14",
+                            "coordinate": ["104.066294", "30.633149"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "15",
+                            "coordinate": ["104.057969", "30.652349"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "16",
+                            "coordinate": ["104.096764", "30.633814"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "17",
+                            "coordinate": ["104.08389", "30.650208"],
+                            "sites": 8
+                        }, {
+                            "driver_id": "18",
+                            "coordinate": ["104.075306", "30.645851"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "19",
+                            "coordinate": ["104.095648", "30.64083"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "20",
+                            "coordinate": ["104.098052", "30.657148"],
+                            "sites": 6
                         }],
                         "config": {
                             "order_distance": "2000",
@@ -260,6 +340,46 @@ def send_data():
                             "coordinate": ["104.089469", "30.640202"],
                             "id": "13",
                             "is_grab": 0
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.086658", "30.652903"],
+                            "id": "14",
+                            "is_grab": 0
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.075113", "30.659585"],
+                            "id": "15",
+                            "is_grab": 0
+                        }, {
+                            "size": "3",
+                            "coordinate": ["104.096228", "30.655635"],
+                            "id": "16",
+                            "is_grab": 0
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.082366", "30.659917"],
+                            "id": "17",
+                            "is_grab": 0
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.058634", "30.663203"],
+                            "id": "18",
+                            "is_grab": 1
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.061981", "30.644522"],
+                            "id": "19",
+                            "is_grab": 1
+                        }, {
+                            "size": "2",
+                            "coordinate": ["104.055716", "30.641347"],
+                            "id": "20",
+                            "is_grab": 1
+                        }, {
+                            "size": "1",
+                            "coordinate": ["104.049793", "30.652349"],
+                            "id": "21",
+                            "is_grab": 1
                         }],
                         "gid": "152",
                         "driver_list": [{
@@ -302,6 +422,46 @@ def send_data():
                             "driver_id": "10",
                             "coordinate": ["104.090069", "30.640497"],
                             "sites": 4
+                        }, {
+                            "driver_id": "11",
+                            "coordinate": ["104.086379", "30.667116"],
+                            "sites": 5
+                        }, {
+                            "driver_id": "12",
+                            "coordinate": ["104.109295", "30.662834"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "13",
+                            "coordinate": ["104.063719", "30.668075"],
+                            "sites": 8
+                        }, {
+                            "driver_id": "14",
+                            "coordinate": ["104.066294", "30.633149"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "15",
+                            "coordinate": ["104.057969", "30.652349"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "16",
+                            "coordinate": ["104.096764", "30.633814"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "17",
+                            "coordinate": ["104.08389", "30.650208"],
+                            "sites": 8
+                        }, {
+                            "driver_id": "18",
+                            "coordinate": ["104.075306", "30.645851"],
+                            "sites": 4
+                        }, {
+                            "driver_id": "19",
+                            "coordinate": ["104.095648", "30.64083"],
+                            "sites": 6
+                        }, {
+                            "driver_id": "20",
+                            "coordinate": ["104.098052", "30.657148"],
+                            "sites": 6
                         }],
                         "config": {
                             "order_distance": "2000",

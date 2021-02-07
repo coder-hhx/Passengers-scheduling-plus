@@ -42,7 +42,8 @@ def scene_change(scene):
         order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data()
         send_data()
 
-    orders = [{"lnglat": [order.lng, order.lat], "id": order.id_, "passenger_num": order.passenger_num} for order in
+    orders = [{"lnglat": [order.lng, order.lat], "id": order.id_, "passenger_num": order.passenger_num,
+               "is_grab": order.is_grab} for order in
               order_list]
     cars = [{"lnglat": [car.lng, car.lat], "id": car.id_, "site_num": car.sites} for car in car_list]
 
