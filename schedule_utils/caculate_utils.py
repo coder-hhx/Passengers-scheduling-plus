@@ -135,6 +135,7 @@ def find_closest_obj(point, data):
         key=lambda obj: get_distance(obj.lng, obj.lat, point['coordinate'][0], point['coordinate'][1]))
     for obj in data:
         if len(obj.orders) == 0:
+            data.remove(obj)
             return obj
 
 

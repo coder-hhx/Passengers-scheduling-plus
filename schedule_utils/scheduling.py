@@ -8,6 +8,7 @@ Contact: houhaixu_email@163.com
 Create Date: 2021/2/2
 -------------------------------------------------
 """
+import copy
 import math
 from typing import List
 
@@ -135,6 +136,9 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
     :return:
     """
 
+    if debug:
+        debug_cars = copy.deepcopy(cars)
+
     result = []  # 计算结果
     in_orders = []  # 范围内订单
     out_orders = []  # 超出范围的订单
@@ -173,6 +177,7 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
                     result.append((order, cluster['car']))
                     order.unsolved = False
                     while cluster['car'].surplus_sites < 0:
+                        cluster['car'].orders.sort(key=lambda elem: elem.is_grab)
                         o = cluster['car'].orders.pop()
                         o.unsolved = True
                         cluster['car'].surplus_sites += o.passenger_num
@@ -256,7 +261,7 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
     if debug:
         data = []
         if type_ == 'receive':
-            for car in cars:
+            for car in debug_cars:
                 temp = []
                 for ret in result:
                     if ret[1].id_ == car.id_:
