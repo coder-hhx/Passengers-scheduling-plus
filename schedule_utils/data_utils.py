@@ -19,9 +19,20 @@ from schedule_utils.models import Car, Order
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 
-def load_data():
+def have_data():
+    """
+    判断数据库中是否存在数据
+    :return:
+    """
+    if r.llen('data') > 0:
+        return True
+    return False
+
+
+def load_data(mode: int):
     """
     加载数据
+    :param mode: 数据加载模式   1为不拆分模式；2为拆分模式
     :return:
     """
     car_list: List[Car] = []  # 车辆列表
@@ -34,16 +45,30 @@ def load_data():
     reserve_rate = float(data['config']['reserve_rate'])  # 作为剩余比例
     type_ = data["config"]["type"]  # 类别
 
-    for order in data['user_list']:
-        order_list.append(
-            Order(
+    if mode == 1:
+        for order in data['user_list']:
+            o = Order(
                 id_=int(order['id']),
                 passenger_num=int(order['size']),
                 lng=float(order['coordinate'][0]),
                 lat=float(order['coordinate'][1]),
                 is_grab=int(order['is_grab'])
             )
-        )
+            if order['bind_car'] != '':
+                o.bind_car = int(order['bind_car'])
+            order_list.append(o)
+    else:
+        for order in data['user_list']:
+            for i in range(int(order['size'])):
+                order_list.append(
+                    Order(
+                        id_=int(order['id']),
+                        passenger_num=1,
+                        lng=float(order['coordinate'][0]),
+                        lat=float(order['coordinate'][1]),
+                        is_grab=int(order['is_grab'])
+                    )
+                )
 
     if type_ == "receive":
         for car in data['driver_list']:
@@ -79,107 +104,128 @@ def receive_data():
                             "size": "1",
                             "coordinate": ["104.07565", "30.664052"],
                             "id": "1",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "3",
                             "coordinate": ["104.086121", "30.66383"],
                             "id": "2",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "2",
                             "coordinate": ["104.095305", "30.659031"],
                             "id": "3",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.099425", "30.648473"],
                             "id": "4",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "4",
                             "coordinate": ["104.086464", "30.64094"],
                             "id": "5",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "3",
                             "coordinate": ["104.078654", "30.653789"],
                             "id": "6",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.072903", "30.64574"],
                             "id": "7",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.073332", "30.669072"],
                             "id": "8",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "2",
                             "coordinate": ["104.085349", "30.670327"],
                             "id": "9",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": "5"
                         }, {
                             "size": "2",
                             "coordinate": ["104.103631", "30.668777"],
                             "id": "10",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.108265", "30.653051"],
                             "id": "11",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": "5"
                         }, {
                             "size": "1",
                             "coordinate": ["104.069384", "30.637396"],
                             "id": "12",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "5",
                             "coordinate": ["104.089469", "30.640202"],
                             "id": "13",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "2",
                             "coordinate": ["104.086658", "30.652903"],
                             "id": "14",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.075113", "30.659585"],
                             "id": "15",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "3",
                             "coordinate": ["104.096228", "30.655635"],
                             "id": "16",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.082366", "30.659917"],
                             "id": "17",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "2",
                             "coordinate": ["104.058634", "30.663203"],
                             "id": "18",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.061981", "30.644522"],
                             "id": "19",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": "2"
                         }, {
                             "size": "2",
                             "coordinate": ["104.055716", "30.641347"],
                             "id": "20",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.049793", "30.652349"],
                             "id": "21",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": "3"
                         }],
                         "gid": "152",
                         "driver_list": [{
@@ -279,107 +325,128 @@ def send_data():
                             "size": "1",
                             "coordinate": ["104.07565", "30.664052"],
                             "id": "1",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "3",
                             "coordinate": ["104.086121", "30.66383"],
                             "id": "2",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "2",
                             "coordinate": ["104.095305", "30.659031"],
                             "id": "3",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.099425", "30.648473"],
                             "id": "4",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "4",
                             "coordinate": ["104.086464", "30.64094"],
                             "id": "5",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "3",
                             "coordinate": ["104.078654", "30.653789"],
                             "id": "6",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.072903", "30.64574"],
                             "id": "7",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.073332", "30.669072"],
                             "id": "8",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "2",
                             "coordinate": ["104.085349", "30.670327"],
                             "id": "9",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": "5"
                         }, {
                             "size": "2",
                             "coordinate": ["104.103631", "30.668777"],
                             "id": "10",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.108265", "30.653051"],
                             "id": "11",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": "5"
                         }, {
                             "size": "1",
                             "coordinate": ["104.069384", "30.637396"],
                             "id": "12",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "5",
                             "coordinate": ["104.089469", "30.640202"],
                             "id": "13",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "2",
                             "coordinate": ["104.086658", "30.652903"],
                             "id": "14",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.075113", "30.659585"],
                             "id": "15",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "3",
                             "coordinate": ["104.096228", "30.655635"],
                             "id": "16",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.082366", "30.659917"],
                             "id": "17",
-                            "is_grab": 0
+                            "is_grab": 0, 
+                            "bind_car": ""
                         }, {
                             "size": "2",
                             "coordinate": ["104.058634", "30.663203"],
                             "id": "18",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.061981", "30.644522"],
                             "id": "19",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": "2"
                         }, {
                             "size": "2",
                             "coordinate": ["104.055716", "30.641347"],
                             "id": "20",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": ""
                         }, {
                             "size": "1",
                             "coordinate": ["104.049793", "30.652349"],
                             "id": "21",
-                            "is_grab": 1
+                            "is_grab": 1, 
+                            "bind_car": "3"
                         }],
                         "gid": "152",
                         "driver_list": [{

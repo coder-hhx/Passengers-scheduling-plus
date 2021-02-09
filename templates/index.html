@@ -93,10 +93,11 @@
     <div class="input-item">
         <input type="button" class="btn" value="接场景" onClick="scene_change('receive')"/>
         <input type="button" class="btn" value="送场景" onClick="scene_change('send')"/>
-        <input type="button" class="btn" value="开始调度" onClick="schedule()"/>
     </div>
-    {#    <div class="input-item">#}
-    {#    </div>#}
+    <div class="input-item">
+        <input type="button" class="btn" value="不拆分模式" onClick="schedule(1)"/>
+        <input type="button" class="btn" value="拆分模式" onClick="schedule(2)"/>
+    </div>
 </div>
 <script>
     var map = new AMap.Map('container', {
@@ -147,6 +148,10 @@
 
     let type = "";
 
+    let order_list = [];
+    let polylines = [];
+    let markers = [];
+
     function scene_change(scene) {
         type = scene;
         $.ajax('/scene_change/' + scene + '/', {
@@ -160,7 +165,9 @@
                     map.setFitView([circle]);
                     let cars = resp.cars;
                     let orders = resp.orders;
-                    let markers = [];
+                    markers = [];
+                    polylines = [];
+                    order_list = [];
                     if (scene === "receive") {
                         console.log(scene);
                         for (let i = 0; i < cars.length; i++) {
@@ -173,7 +180,6 @@
                         }
                     }
 
-
                     for (let i = 0; i < orders.length; i++) {
                         let content = "";
                         if (orders[i].is_grab === 0) {
@@ -181,62 +187,125 @@
                         } else {
                             content = '<div class="p-bg-1"><b class="p-font">' + orders[i].id + '-' + orders[i].passenger_num + '</b></div>';
                         }
-                        markers.push(new AMap.Marker({
+                        order_list.push(new AMap.Marker({
                             content: content,
                             offset: new AMap.Pixel(-24, -24),
                             position: orders[i].lnglat,
+                            extData: orders[i].id
                         }));
                     }
 
                     map.add(markers);
+                    map.add(order_list);
                 }
             }
         })
     }
 
-    let polylines = [];
-    let markers = [];
 
-    function schedule() {
-        $.ajax('/schedule/', {
+    function schedule(mode) {
+        $.ajax('/schedule/' + mode + '/', {
             type: "GET",
             dataType: "json",
             success: function (resp) {
+                if (resp.status === 500) {
+                    alert('请先插入数据！');
+                    return
+                }
                 console.log(type);
                 map.remove(polylines);
-                map.remove(markers);
+                map.remove(order_list);
                 polylines = [];
-                markers = [];
                 let data = resp.data;
                 for (let i = 0; i < data.length; i++) {
                     let color = getRandomColor();
                     let car = data[i].car;
-                    if (type === 'send') {
-                        let content = '<div class="car-bg-2"><b class="car-font">' + car.id + '-' + car.sites + '</b></div>';
+
+                    let content = "";
+
+                    console.log(type);
+
+                    if (type === "send") {
+                        {#map.remove(markers);#}
+                        {#markers = [];#}
+                        content = '<div class="car-bg-2"><b class="car-font">' + car.id + '-' + car.sites + '</b></div>';
                         markers.push(new AMap.Marker({
                             content: content,
                             offset: new AMap.Pixel(-24, -24),
                             position: car.lnglat,
                         }));
                     }
-                    for (let j = 0; j < data[i].orders.length; j++) {
-                        let order = data[i].orders[j].order;
-                        {#let content = '<div style="width: 48px; height: 48px; position:relative; border-radius: 50%; background: ' + color + ';"><b class="car-font" style="color: white;">' + order.id + '-' + order.passenger_num + '</b></div>';
-                        markers.push(new AMap.Marker({
-                            content: content,
-                            offset: new AMap.Pixel(-24, -24),
-                            position: order.lnglat,
-                        }));#}
 
-                        polylines.push(new AMap.Polyline({
-                            path: [car.lnglat, order.lnglat],
-                            strokeWeight: 2,
-                            isOutline: true,
-                            strokeColor: color
-                        }));
+
+                    if (mode === 1) {
+                        for (let j = 0; j < data[i].orders.length; j++) {
+                            let order = data[i].orders[j].order;
+                            if (order.is_grab === 0) {
+                                content = '<div class="p-bg-2"><b class="p-font">' + order.id + '-' + order.passenger_num + '</b></div>';
+                            } else {
+                                content = '<div class="p-bg-1"><b class="p-font">' + order.id + '-' + order.passenger_num + '</b></div>';
+                            }
+                            let lng = order.lnglat[0] + (((Math.random() * 2) - 1) / 3000);
+                            let lat = order.lnglat[1] + (((Math.random() * 2) - 1) / 3000);
+
+                            for (let j = 0; j < order_list.length; j++) {
+                                if (order_list[j].getExtData() === order.id) {
+                                    order_list.splice(j, 1);
+                                    console.log('删除');
+                                    break;
+                                }
+                            }
+
+                            order_list.push(new AMap.Marker({
+                                content: content,
+                                offset: new AMap.Pixel(-24, -24),
+                                position: [lng, lat],
+                            }));
+
+                            polylines.push(new AMap.Polyline({
+                                path: [car.lnglat, [lng, lat]],
+                                strokeWeight: 2,
+                                isOutline: true,
+                                strokeColor: color
+                            }));
+                        }
+                    } else {
+                        for (let j = 0; j < data[i].orders.length; j++) {
+                            let order = data[i].orders[j].order;
+                            if (order.is_grab === 0) {
+                                content = '<div class="p-bg-2"><b class="p-font">' + order.id + '-' + order.passenger_num + '</b></div>';
+                            } else {
+                                content = '<div class="p-bg-1"><b class="p-font">' + order.id + '-' + order.passenger_num + '</b></div>';
+                            }
+                            let lng = order.lnglat[0] + (((Math.random() * 2) - 1) / 3000);
+                            let lat = order.lnglat[1] + (((Math.random() * 2) - 1) / 3000);
+
+                            for (let j = 0; j < order_list.length; j++) {
+                                if (order_list[j].getExtData() === order.id) {
+                                    order_list.splice(j, 1);
+                                    console.log('删除');
+                                    break;
+                                }
+                            }
+
+                            order_list.push(new AMap.Marker({
+                                content: content,
+                                offset: new AMap.Pixel(-24, -24),
+                                position: [lng, lat],
+                            }));
+
+                            polylines.push(new AMap.Polyline({
+                                path: [car.lnglat, [lng, lat]],
+                                strokeWeight: 2,
+                                isOutline: true,
+                                strokeColor: color
+                            }));
+                        }
                     }
+
                 }
                 map.add(markers);
+                map.add(order_list);
                 map.add(polylines);
 
                 map.setCenter(resp.center)

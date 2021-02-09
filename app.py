@@ -22,11 +22,14 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/schedule/')
-def schedule():
-    result = run(debug=True)
+@app.route('/schedule/<mode>/')
+def schedule(mode):
+    result = run(int(mode), debug=True)
 
+    if result is None:
+        return jsonify({'status': 500})
     return jsonify({
+        'status': 200,
         'data': result
     })
 
@@ -35,11 +38,11 @@ def schedule():
 def scene_change(scene):
     if scene == "receive":
         receive_data()
-        order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data()
+        order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data(1)
         receive_data()
     else:
         send_data()
-        order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data()
+        order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data(1)
         send_data()
 
     orders = [{"lnglat": [order.lng, order.lat], "id": order.id_, "passenger_num": order.passenger_num,

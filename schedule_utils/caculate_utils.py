@@ -108,7 +108,6 @@ def k_means(order_list: List[Order], k):
     for index, center in enumerate(centers):
         orders = [order_list[e] for e, i in enumerate(clusters) if int(i) == index]
         cluster = {
-            "id": index,
             "coordinate": list(center),
             "orders": orders
         }

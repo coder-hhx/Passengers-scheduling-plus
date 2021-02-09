@@ -13,8 +13,10 @@ import math
 from typing import List
 
 from schedule_utils.caculate_utils import k_means, get_distance, DP, find_closest_obj
-from schedule_utils.data_utils import load_data, push_data
+from schedule_utils.data_utils import load_data, push_data, have_data
 from schedule_utils.models import Order, Car
+
+result = []  # 计算结果
 
 
 def get_cars_sites_num(cars: List[Car]):
@@ -25,7 +27,7 @@ def get_cars_sites_num(cars: List[Car]):
     """
     sites_num = 0
     for car in cars:
-        sites_num += car.sites
+        sites_num += car.surplus_sites
     return sites_num
 
 
@@ -69,47 +71,6 @@ def is_all_grab_orders(orders: List[Order]):
     return True
 
 
-def preprocess_data(cars, orders, reserve_rate):
-    """
-    对数据进行预处理
-    :param cars: 所有车辆
-    :param orders: 所有订单
-    :return: 可以使用的车辆
-    """
-    available_cars: List[Car] = []  # 可用车辆
-
-    available_orders: List[Order] = []  # 可分配的订单
-
-    grab_orders: List[Order] = []  # 需要抢单的列表
-
-    all_passenger_num = 0
-
-    for order in orders:
-        if order.is_grab == 0:
-            available_orders.append(order)
-            all_passenger_num += order.passenger_num
-            while get_cars_sites_num(available_cars) < all_passenger_num:
-                available_cars.append(cars.pop(0))
-        else:
-            grab_orders.append(order)
-
-    if math.floor(len(cars) * reserve_rate) >= 1:  # 如果还有可用车辆抢单
-        for _ in range(math.floor(len(cars) * reserve_rate)):
-            available_cars.append(cars.pop(0))
-
-        center_point = get_orders_center_point(orders)
-
-        grab_orders.sort(key=lambda elem: get_distance(center_point[0], center_point[1], elem.lng, elem.lat))
-
-        while get_cars_sites_num(available_cars) < all_passenger_num + get_orders_passengers_num(grab_orders):
-            # 若车辆座位数小于乘客数，则放弃最远的范围外的订单
-            grab_orders.pop()
-
-        available_orders.extend(grab_orders)
-
-    return available_cars, available_orders
-
-
 def abandon_order(orders: List[Order], center: List[float], max_dis: int):
     """
     放弃该簇中，范围外且距离簇心的距离大于最远距离的点
@@ -129,17 +90,107 @@ def abandon_order(orders: List[Order], center: List[float], max_dis: int):
     return new_orders
 
 
-def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
+def calculate_centroid(clusters):
+    """
+    重新计算质心
+    :param clusters: 所有的组
+    :return:
+    """
+    for cluster in clusters:
+        # 重新计算质心
+        if len(cluster['car'].orders) > 0:
+            lng = lat = 0
+            for order in cluster['car'].orders:
+                lng += order.lng
+                lat += order.lat
+            cluster['coordinate'] = [lng / len(cluster['car'].orders), lat / len(cluster['car'].orders)]
+
+
+def preprocess_data(cars, orders, reserve_rate):
+    """
+    对数据进行预处理
+    :param cars: 所有车辆
+    :param orders: 所有订单
+    :return: 可以使用的车辆
+    """
+
+    must_cars: List[Car] = []  # 必须使用车辆
+
+    available_cars: List[Car] = []  # 可用车辆
+
+    available_orders: List[Order] = []  # 可分配的订单
+
+    grab_orders: List[Order] = []  # 需要抢单的列表
+
+    all_passenger_num = 0
+
+    for order in orders:
+        if isinstance(order.bind_car, int):
+            for car in cars:
+                if order.bind_car == car.id_:
+                    car.change_surplus_sites(order.passenger_num)
+                    car.orders.append(order)
+                    if car not in must_cars:
+                        must_cars.append(car)
+                    result.append((order, car))
+                    break
+            order.unsolved = False
+            all_passenger_num += order.passenger_num
+
+    for car in must_cars:
+        cars.remove(car)
+
+    for order in orders:
+        if order.is_grab == 0:
+            available_orders.append(order)
+            all_passenger_num += order.passenger_num
+            while get_cars_sites_num(must_cars) + get_cars_sites_num(available_cars) < all_passenger_num:
+                available_cars.append(cars.pop(0))
+        else:
+            if order.bind_car is None:
+                grab_orders.append(order)
+
+    if get_cars_sites_num(must_cars) + get_cars_sites_num(available_cars) \
+            < all_passenger_num + get_orders_passengers_num(grab_orders):
+        if math.floor(len(cars) * reserve_rate) >= 1:  # 如果还有可用车辆抢单
+            for _ in range(math.floor(len(cars) * reserve_rate)):
+                available_cars.append(cars.pop(0))
+
+    center_point = get_orders_center_point(orders)
+
+    grab_orders.sort(key=lambda elem: get_distance(center_point[0], center_point[1], elem.lng, elem.lat))
+
+    while get_cars_sites_num(must_cars) + get_cars_sites_num(available_cars) \
+            < all_passenger_num + get_orders_passengers_num(grab_orders):
+        # 若车辆座位数小于乘客数，则放弃最远的范围外的订单
+        grab_orders.pop()
+
+    available_orders.extend(grab_orders)
+
+    return must_cars, available_cars, available_orders
+
+
+def schedule(must_cars: List[Car], cars: List[Car], orders: List[Order], order_distance: int, car_distance: int,
+             type_: str, debug=False):
     """
     乘客调度
-    :param mode: 加载模式
+    :param must_cars: 优先分配车辆
+    :param cars: 其他可用车辆
+    :param orders: 订单
+    :param order_distance:
+    :param car_distance:
+    :param type_:
+    :param debug:
     :return:
     """
 
     if debug:
-        debug_cars = copy.deepcopy(cars)
+        debug_cars = []
+        debug_cars.extend(copy.deepcopy(must_cars))
+        debug_cars.extend(copy.deepcopy(cars))
 
-    result = []  # 计算结果
+    must_clusters = []  # 组
+
     in_orders = []  # 范围内订单
     out_orders = []  # 超出范围的订单
     for order in orders:
@@ -147,6 +198,35 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
             in_orders.append(order)
         else:
             out_orders.append(order)
+
+    for car in must_cars:
+        lng = 0
+        lat = 0
+        for order in car.orders:
+            lng += order.lng
+            lat += order.lat
+        cluster = {
+            "coordinate": [lng / len(car.orders), lat / len(car.orders)],
+            "orders": car.orders,
+            "car": car
+        }
+        while True:
+            in_orders.sort(key=lambda order: get_distance(order.lng, order.lat, cluster["coordinate"][0],
+                                                          cluster["coordinate"][1]))
+            if in_orders[0].passenger_num <= car.surplus_sites:
+                o = in_orders.pop(0)
+                o.unsolved = False
+                car.change_surplus_sites(o.passenger_num)
+                car.orders.append(o)
+                result.append((o, car))
+                orders.remove(o)
+                for order in car.orders:
+                    lng += order.lng
+                    lat += order.lat
+                cluster['coordinate'] = [lng / len(car.orders), lat / len(car.orders)]
+            else:
+                break
+        must_clusters.append(cluster)
 
     clusters = k_means(orders, len(cars))
 
@@ -164,6 +244,8 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
         else:
             result.extend(DP(closest_car, cluster["orders"]))
 
+    clusters.extend(must_clusters)
+
     for order in in_orders:  # 一轮优化
         if order.unsolved:
             clusters.sort(
@@ -178,15 +260,20 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
                     order.unsolved = False
                     while cluster['car'].surplus_sites < 0:
                         cluster['car'].orders.sort(key=lambda elem: elem.is_grab)
-                        o = cluster['car'].orders.pop()
-                        o.unsolved = True
-                        cluster['car'].surplus_sites += o.passenger_num
-                        for ret in result:
-                            if ret[0].id_ == o.id_ and ret[1].id_ == cluster['car'].id_:
-                                result.remove(ret)
+                        for o in cluster['car'].orders:
+                            if o.bind_car is None:
+                                cluster['car'].orders.remove(o)
+                                o.unsolved = True
+                                cluster['car'].surplus_sites += o.passenger_num
+                                for ret in result:
+                                    if ret[0].id_ == o.id_ and ret[1].id_ == cluster['car'].id_:
+                                        result.remove(ret)
+                                        break
                                 break
                     if not order.unsolved:
                         break
+
+    calculate_centroid(clusters)
 
     for order in in_orders:  # 二轮优化
         if order.unsolved:
@@ -200,6 +287,8 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
                     cluster['car'].change_surplus_sites(order.passenger_num)
                     result.append((order, cluster['car']))
                     break
+
+    calculate_centroid(clusters)
 
     for order in in_orders:  # 三轮优化
         if order.unsolved:
@@ -223,7 +312,9 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
                         result.append((o, cluster['car']))
                         break
 
-    for cluster in clusters:  # 范围外抢单
+    calculate_centroid(clusters)
+
+    for cluster in clusters:  # 范围外
         for order in cluster['orders']:
             if order.is_grab == 0 and order.unsolved:
                 if cluster['car'].surplus_sites >= order.passenger_num:
@@ -233,13 +324,7 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
                     result.append((order, cluster['car']))
                     break
 
-        # 重新计算质心
-        if len(cluster['car'].orders) > 0:
-            lng = lat = 0
-            for order in cluster['car'].orders:
-                lng += order.lng
-                lat += order.lat
-            cluster['coordinate'] = [lng / len(cluster['car'].orders), lat / len(cluster['car'].orders)]
+    calculate_centroid(clusters)
 
     for order in out_orders:  # 抢单二轮优化
         if order.unsolved:
@@ -268,7 +353,8 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
                         temp.append({
                             'order': {
                                 'id': ret[0].id_, 'lnglat': [ret[0].lng, ret[0].lat],
-                                'passenger_num': ret[0].passenger_num
+                                'passenger_num': ret[0].passenger_num,
+                                'is_grab': ret[0].is_grab
                             }
                         })
 
@@ -284,7 +370,8 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
                     temp.append({
                         'order': {
                             'id': order.id_, 'lnglat': [order.lng, order.lat],
-                            'passenger_num': order.passenger_num
+                            'passenger_num': order.passenger_num,
+                            'is_grab': order.is_grab
                         }
                     })
                 if len(temp) > 0:
@@ -297,13 +384,17 @@ def schedule(orders, cars, order_distance, car_distance, type_, debug=False):
         return data
 
 
-def run(debug=False):
-    order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data()
-    available_cars, available_orders = preprocess_data(car_list, order_list, reserve_rate)
-    ret = schedule(available_orders, available_cars, order_distance, car_distance, type_, debug=debug)
+def run(mode: int, debug=False):
+    if not have_data():
+        return None
+
+    result.clear()
+    order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data(mode)
+    must_cars, available_cars, available_orders = preprocess_data(car_list, order_list, reserve_rate)
+    ret = schedule(must_cars, available_cars, available_orders, order_distance, car_distance, type_, debug=debug)
     if debug:
         return ret
 
 
 if __name__ == '__main__':
-    run()
+    run(1)
