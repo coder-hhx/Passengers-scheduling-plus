@@ -226,8 +226,6 @@
                     console.log(type);
 
                     if (type === "send") {
-                        {#map.remove(markers);#}
-                        {#markers = [];#}
                         content = '<div class="car-bg-2"><b class="car-font">' + car.id + '-' + car.sites + '</b></div>';
                         markers.push(new AMap.Marker({
                             content: content,
