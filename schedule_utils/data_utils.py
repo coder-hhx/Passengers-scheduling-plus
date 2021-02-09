@@ -16,7 +16,7 @@ import redis
 
 from schedule_utils.models import Car, Order
 
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+r = redis.Redis(host='localhost', port=6379, decode_responses=True, db=1)
 
 
 def have_data():
