@@ -60,15 +60,16 @@ def load_data(mode: int):
     else:
         for order in data['user_list']:
             for i in range(int(order['size'])):
-                order_list.append(
-                    Order(
-                        id_=int(order['id']),
-                        passenger_num=1,
-                        lng=float(order['coordinate'][0]),
-                        lat=float(order['coordinate'][1]),
-                        is_grab=int(order['is_grab'])
-                    )
+                o = Order(
+                    id_=int(order['id']),
+                    passenger_num=1,
+                    lng=float(order['coordinate'][0]),
+                    lat=float(order['coordinate'][1]),
+                    is_grab=int(order['is_grab'])
                 )
+                if order['bind_car'] != '':
+                    o.bind_car = int(order['bind_car'])
+                order_list.append(o)
 
     if type_ == "receive":
         for car in data['driver_list']:
