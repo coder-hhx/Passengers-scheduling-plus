@@ -317,7 +317,7 @@ def receive_data():
     #                         "type": "receive"
     #                     }
     #                 }'''
-    with open('../data.txt', 'r', encoding='utf-8') as f:
+    with open(r'C:\Users\10219\Desktop\Passengers-scheduling-plus\data.txt', 'r', encoding='utf-8') as f:
         data_txt = f.read()
     r.lpush('data', data_txt)
 
@@ -540,6 +540,6 @@ def send_data():
     #                         "type": "send"
     #                     }
     #                 }'''
-    with open('../data.txt', 'r', encoding='utf-8') as f:
+    with open(r'C:\Users\10219\Desktop\Passengers-scheduling-plus\data.txt', 'r', encoding='utf-8') as f:
         data_txt = f.read()
     r.lpush('data', data_txt)
