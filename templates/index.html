@@ -77,11 +77,27 @@
         }
 
         .custom-input-card {
-            width: 18rem;
+            width: auto;
         }
 
         .custom-input-card .btn:last-child {
             margin-left: 1rem;
+        }
+
+        .msg_txt {
+            width: 40rem;
+            height: 30rem;
+            resize: none;
+        }
+
+        .font {
+            font-size: 18px;
+        }
+
+        .radio {
+            vertical-align: middle;
+            margin-top: -2px;
+            margin-bottom: 1px;
         }
 
     </style>
@@ -89,29 +105,68 @@
 <body>
 <div id="container"></div>
 <div class="input-card custom-input-card">
-    <h4>切换算法</h4>
     <div class="input-item">
-        <input type="button" class="btn" value="接场景" onClick="scene_change('receive')"/>
-        <input type="button" class="btn" value="送场景" onClick="scene_change('send')"/>
+        <label class="font">范围半径：</label>
+        <input id="radius" type="number" value="2000" style="margin-right: 20px;">
+        <input type="button" class="btn" value="修改范围半径" onClick="change_radius()"/>
     </div>
+
+    <hr style="height:1px;border:none;border-top:1px solid #555555;"/>
+
     <div class="input-item">
-        <input type="button" class="btn" value="不拆分模式" onClick="schedule(1)"/>
+        <label class="font">数据模式：</label>
+        <label style="margin-right: 20px;font-size: 15px;">
+            <input type="radio" class="radio" name="type" value="receive" checked>
+            接模式
+        </label>
+        <label style="margin-right: 20px;font-size: 15px;">
+            <input type="radio" class="radio" name="type" value="send">
+            送模式
+        </label>
+    </div>
+
+    <div class="input-item">
+        <label class="font">车辆与质心最大距离：</label>
+        <input id="car_distance" type="number" value="2000" style="margin-right: 20px;">
+    </div>
+
+    <div class="input-item">
+        <label class="font">订单与质心最大距离：</label>
+        <input id="order_distance" type="number" value="2000" style="margin-right: 20px;">
+    </div>
+
+    <div class="input-item">
+        <label class="font">车辆座位的预留比例：</label>
+        <input id="reserve_rate" type="number" value="0.2" style="margin-right: 20px;">
+    </div>
+
+    <div class="input_item">
+        <label class="font">输入数据：</label>
+    </div>
+    <textarea id="data-txt" class="msg_txt" style="overflow-Y:scroll" placeholder="请输入数据"
+              onkeyup="check_data()"></textarea>
+
+    <p id="f" style="font-size: 14px;color: red;display: none">数据格式错误</p>
+    <p id="y" style="font-size: 14px;color: limegreen;display: none">数据格式正确</p>
+
+    <div class="input-item" style="width: 100%;">
+        <input type="button" style="margin-right: 10px;" class="btn" value="不拆分模式" onClick="schedule(1)"/>
         <input type="button" class="btn" value="拆分模式" onClick="schedule(2)"/>
     </div>
 </div>
 <script>
-    var map = new AMap.Map('container', {
+    let scope_radius = 2000;
+    let map = new AMap.Map('container', {
         resizeEnable: true,
         zoom: 11,
         center: [104.085177, 30.651646]
     });
 
-    var circle = new AMap.Circle({
+    let circle = new AMap.Circle({
         center: [104.085177, 30.651646],
-        radius: 2000, //半径
+        radius: scope_radius, //半径
         borderWeight: 3,
         strokeColor: "#FF33FF",
-        strokeOpacity: 1,
         strokeWeight: 6,
         strokeOpacity: 0.2,
         fillOpacity: 0.4,
@@ -142,15 +197,25 @@
 
     map.setFitView([circle]);
 
+    function change_radius() {
+        circle.setRadius($("input#radius").val());
+    }
+
     function getRandomColor() {
         return '#' + Math.floor(Math.random() * 0xffffff).toString(16);
     }
 
-    let type = "";
+    let type = "receive";
+
+    $("input[name=type]").click(function () {
+        type = $(this).val();
+    });
 
     let order_list = [];
     let polylines = [];
     let markers = [];
+
+    let valid_data = true;
 
     function scene_change(scene) {
         type = scene;
@@ -203,27 +268,104 @@
     }
 
 
+    function check_data() {
+        let data_txt = $("#data-txt").val();
+        try {
+            let data = $.parseJSON(data_txt);
+            if (typeof data !== "object" || !data) {
+                throw "";
+            }
+            $("p#f").css("display", "none");
+            $("p#y").css("display", "block");
+            valid_data = true;
+
+            map.clearMap();
+            map.add(circle);
+            let cars = data.driver_list;
+            let orders = data.user_list;
+            markers = [];
+            polylines = [];
+            order_list = [];
+            if (type === "receive") {
+                for (let i = 0; i < cars.length; i++) {
+                    let content = '<div class="car-bg-1"><b class="car-font">' + cars[i].driver_id + '-' + cars[i].sites + '</b></div>';
+                    markers.push(new AMap.Marker({
+                        content: content,
+                        offset: new AMap.Pixel(-24, -24),
+                        position: [parseFloat(cars[i].coordinate[0]), parseFloat(cars[i].coordinate[1])],
+                    }));
+                }
+            }
+
+            for (let i = 0; i < orders.length; i++) {
+                let content = "";
+                if (orders[i].is_grab === 0) {
+                    content = '<div class="p-bg-2"><b class="p-font">' + orders[i].id + '-' + orders[i].size + '</b></div>';
+                } else {
+                    content = '<div class="p-bg-1"><b class="p-font">' + orders[i].id + '-' + orders[i].size + '</b></div>';
+                }
+                order_list.push(new AMap.Marker({
+                    content: content,
+                    offset: new AMap.Pixel(-24, -24),
+                    position: [parseFloat(orders[i].coordinate[0]), parseFloat(orders[i].coordinate[1])],
+                    extData: parseInt(orders[i].id)
+                }));
+            }
+
+            map.add(markers);
+            map.add(order_list);
+            map.setFitView();
+
+
+        } catch (e) {
+            $("p#y").css("display", "none");
+            $("p#f").css("display", "block");
+            valid_data = false;
+
+            map.clearMap();
+            map.add(circle);
+            markers = [];
+            polylines = [];
+            order_list = [];
+        }
+    }
+
+
     function schedule(mode) {
-        $.ajax('/schedule/' + mode + '/', {
-            type: "GET",
-            dataType: "json",
+        let data_txt = $("#data-txt").val();
+        let order_distance = $("#order_distance").val();
+        let car_distance = $("#car_distance").val();
+        let reserve_rate = $("#reserve_rate").val();
+
+        check_data();
+
+        if (!valid_data) {
+            alert("请输入正确的数据！");
+            return;
+        }
+
+        $.ajax('/test/', {
+            type: "POST",
+            data: {
+                data_txt: data_txt,
+                order_distance: order_distance,
+                car_distance: car_distance,
+                reserve_rate: reserve_rate,
+                data_type: type,
+                mode: mode
+            },
             success: function (resp) {
                 if (resp.status === 500) {
-                    alert('请先插入数据！');
+                    alert('数据格式错误！');
                     return
                 }
-                console.log(type);
-                map.remove(polylines);
                 map.remove(order_list);
-                polylines = [];
                 let data = resp.data;
                 for (let i = 0; i < data.length; i++) {
                     let color = getRandomColor();
                     let car = data[i].car;
 
                     let content = "";
-
-                    console.log(type);
 
                     if (type === "send") {
                         content = '<div class="car-bg-2"><b class="car-font">' + car.id + '-' + car.sites + '</b></div>';
@@ -243,25 +385,9 @@
                             } else {
                                 content = '<div class="p-bg-1"><b class="p-font">' + order.id + '-' + order.passenger_num + '</b></div>';
                             }
-                            let lng = order.lnglat[0] + (((Math.random() * 2) - 1) / 3000);
-                            let lat = order.lnglat[1] + (((Math.random() * 2) - 1) / 3000);
-
-                            for (let j = 0; j < order_list.length; j++) {
-                                if (order_list[j].getExtData() === order.id) {
-                                    order_list.splice(j, 1);
-                                    console.log('删除');
-                                    break;
-                                }
-                            }
-
-                            order_list.push(new AMap.Marker({
-                                content: content,
-                                offset: new AMap.Pixel(-24, -24),
-                                position: [lng, lat],
-                            }));
 
                             polylines.push(new AMap.Polyline({
-                                path: [car.lnglat, [lng, lat]],
+                                path: [car.lnglat, order.lnglat],
                                 strokeWeight: 2,
                                 isOutline: true,
                                 strokeColor: color
@@ -281,7 +407,6 @@
                             for (let j = 0; j < order_list.length; j++) {
                                 if (order_list[j].getExtData() === order.id) {
                                     order_list.splice(j, 1);
-                                    console.log('删除');
                                     break;
                                 }
                             }
@@ -305,10 +430,9 @@
                 map.add(markers);
                 map.add(order_list);
                 map.add(polylines);
-
-                map.setCenter(resp.center)
+                {#map.setFitView();#}
             }
-        })
+        });
     }
 
 

@@ -104,6 +104,8 @@ def calculate_centroid(clusters):
                 lng += order.lng
                 lat += order.lat
             cluster['coordinate'] = [lng / len(cluster['car'].orders), lat / len(cluster['car'].orders)]
+        else:
+            cluster['coordinate'] = [cluster['car'].lng, cluster['car'].lat]
 
 
 def preprocess_data(cars, orders, reserve_rate):
@@ -232,6 +234,7 @@ def schedule(must_cars: List[Car], cars: List[Car], orders: List[Order], order_d
                 o = in_orders.pop(0)
                 o.unsolved = False
                 car.change_surplus_sites(o.passenger_num)
+
                 car.orders.append(o)
                 result.append((o, car))
                 orders.remove(o)
@@ -412,6 +415,13 @@ def run(mode: int, debug=False):
     ret = schedule(must_cars, available_cars, available_orders, order_distance, car_distance, type_, debug=debug)
     if debug:
         return ret
+
+
+def test_schedule(order_list, car_list, type_, order_distance, car_distance, reserve_rate):
+    result.clear()
+    must_cars, available_cars, available_orders = preprocess_data(car_list, order_list, reserve_rate)
+    ret = schedule(must_cars, available_cars, available_orders, order_distance, car_distance, type_, debug=True)
+    return ret
 
 
 if __name__ == '__main__':

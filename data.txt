@@ -10,37 +10,37 @@
 		"coordinate": ["103.972802", "30.587585"],
 		"id": "50",
 		"is_grab": 1,
-		"bind_car": "71"
+		"bind_car": ""
 	}, {
 		"size": "1",
 		"coordinate": ["103.973741", "30.587955"],
 		"id": "51",
 		"is_grab": 1,
-		"bind_car": "72"
+		"bind_car": ""
 	}, {
 		"size": "3",
 		"coordinate": ["103.980314", "30.587485"],
 		"id": "52",
 		"is_grab": 1,
-		"bind_car": "73"
+		"bind_car": ""
 	}, {
 		"size": "1",
 		"coordinate": ["103.975619", "30.584122"],
 		"id": "53",
 		"is_grab": 1,
-		"bind_car": "74"
+		"bind_car": ""
 	}, {
 		"size": "2",
 		"coordinate": ["103.975613", "30.587212"],
 		"id": "54",
 		"is_grab": 1,
-		"bind_car": "75"
+		"bind_car": ""
 	}, {
 		"size": "3",
 		"coordinate": ["103.978436", "30.590303"],
 		"id": "55",
 		"is_grab": 1,
-		"bind_car": "76"
+		"bind_car": ""
 	}, {
 		"size": "2",
 		"coordinate": ["103.981253", "30.592622"],
@@ -283,9 +283,9 @@
 		"sites": 6
 	}],
 	"config": {
-		"order_distance": "2000",
-		"car_distance": "2000",
-		"reserve_rate": "0.3",
+		"order_distance": "5000",
+		"car_distance": "5000",
+		"reserve_rate": "0.5",
 		"type": "receive"
 	}
 }
