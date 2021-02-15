@@ -19,6 +19,13 @@ from schedule_utils.models import Order, Car
 result = []  # 计算结果
 
 
+def is_in_scope(lng, lat, radius):
+    if get_distance(lng, lat, 104.085177, 30.651646) > radius:
+        return 1
+    else:
+        return 0
+
+
 def get_cars_sites_num(cars: List[Car]):
     """
     获取当前车辆列表座位数
@@ -143,7 +150,7 @@ def preprocess_data(cars, orders, reserve_rate):
         cars.remove(car)
 
     for order in orders:
-        if order.is_grab == 0:
+        if order.is_grab == 0 and order.unsolved != False:
             available_orders.append(order)
             all_passenger_num += order.passenger_num
             while get_cars_sites_num(must_cars) + get_cars_sites_num(available_cars) < all_passenger_num:

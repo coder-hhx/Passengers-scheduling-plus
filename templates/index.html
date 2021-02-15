@@ -195,10 +195,12 @@
     map.add(circle);
 
 
-    map.setFitView([circle]);
+    map.setFitView();
 
     function change_radius() {
-        circle.setRadius($("input#radius").val());
+        scope_radius = $("input#radius").val();
+        circle.setRadius(scope_radius);
+        check_data();
     }
 
     function getRandomColor() {
@@ -215,60 +217,101 @@
     let polylines = [];
     let markers = [];
 
-    let valid_data = true;
+    let valid_data = false;
 
-    function scene_change(scene) {
-        type = scene;
-        $.ajax('/scene_change/' + scene + '/', {
-            type: "GET",
-            dataType: "json",
-            success: function (resp) {
-                if (resp.status === 200) {
-                    alert("场景切换成功");
-                    map.clearMap();
-                    map.add(circle);
-                    map.setFitView([circle]);
-                    let cars = resp.cars;
-                    let orders = resp.orders;
-                    markers = [];
-                    polylines = [];
-                    order_list = [];
-                    if (scene === "receive") {
-                        console.log(scene);
-                        for (let i = 0; i < cars.length; i++) {
-                            let content = '<div class="car-bg-1"><b class="car-font">' + cars[i].id + '-' + cars[i].site_num + '</b></div>';
-                            markers.push(new AMap.Marker({
+    function check_data() {
+        let data_txt = $("#data-txt").val();
+        try {
+            let data = $.parseJSON(data_txt);
+            if (typeof data !== "object" || !data) {
+                throw "";
+            }
+            $("p#f").css("display", "none");
+            $("p#y").css("display", "block");
+            valid_data = true;
+            $.ajax('/check_data/', {
+                type: "POST",
+                data: {
+                    data_txt: data_txt,
+                    data_type: type,
+                    radius: scope_radius
+                },
+                success: function (resp) {
+                    if (resp.status === 200) {
+                        $("p#f").css("display", "none");
+                        $("p#y").css("display", "block");
+                        valid_data = true;
+                        map.remove(markers);
+                        map.remove(polylines);
+                        map.remove(order_list);
+                        let cars = resp.cars;
+                        let orders = resp.orders;
+                        markers = [];
+                        polylines = [];
+                        order_list = [];
+                        if (type === "receive") {
+                            for (let i = 0; i < cars.length; i++) {
+                                let content = '<div class="car-bg-1"><b class="car-font">' + cars[i].id + '-' + cars[i].site_num + '</b></div>';
+                                markers.push(new AMap.Marker({
+                                    content: content,
+                                    offset: new AMap.Pixel(-24, -24),
+                                    position: cars[i].lnglat,
+                                }));
+                            }
+                        }
+
+                        for (let i = 0; i < orders.length; i++) {
+                            let content = "";
+                            if (orders[i].is_grab === 0) {
+                                content = '<div class="p-bg-2"><b class="p-font">' + orders[i].id + '-' + orders[i].passenger_num + '</b></div>';
+                            } else {
+                                content = '<div class="p-bg-1"><b class="p-font">' + orders[i].id + '-' + orders[i].passenger_num + '</b></div>';
+                            }
+                            order_list.push(new AMap.Marker({
                                 content: content,
                                 offset: new AMap.Pixel(-24, -24),
-                                position: cars[i].lnglat,
+                                position: orders[i].lnglat,
+                                extData: orders[i].id
                             }));
                         }
-                    }
 
-                    for (let i = 0; i < orders.length; i++) {
-                        let content = "";
-                        if (orders[i].is_grab === 0) {
-                            content = '<div class="p-bg-2"><b class="p-font">' + orders[i].id + '-' + orders[i].passenger_num + '</b></div>';
-                        } else {
-                            content = '<div class="p-bg-1"><b class="p-font">' + orders[i].id + '-' + orders[i].passenger_num + '</b></div>';
-                        }
-                        order_list.push(new AMap.Marker({
-                            content: content,
-                            offset: new AMap.Pixel(-24, -24),
-                            position: orders[i].lnglat,
-                            extData: orders[i].id
-                        }));
-                    }
+                        map.add(markers);
+                        map.add(order_list);
+                        map.setFitView();
+                    } else {
+                        $("p#y").css("display", "none");
+                        $("p#f").css("display", "block");
+                        valid_data = false;
 
-                    map.add(markers);
-                    map.add(order_list);
+                        map.remove(markers);
+                        map.remove(polylines);
+                        map.remove(order_list);
+
+                        markers = [];
+                        polylines = [];
+                        order_list = [];
+                    }
                 }
-            }
-        })
+            })
+        } catch (e) {
+            $("p#y").css("display", "none");
+            $("p#f").css("display", "block");
+            valid_data = false;
+
+            map.remove(markers);
+            map.remove(polylines);
+            map.remove(order_list);
+
+            markers = [];
+            polylines = [];
+            order_list = [];
+        }
+
+        map.setFitView();
     }
 
 
-    function check_data() {
+    function check_data_1() {
         let data_txt = $("#data-txt").val();
         try {
             let data = $.parseJSON(data_txt);
@@ -352,7 +395,8 @@
                 car_distance: car_distance,
                 reserve_rate: reserve_rate,
                 data_type: type,
-                mode: mode
+                mode: mode,
+                radius: scope_radius
             },
             success: function (resp) {
                 if (resp.status === 500) {
@@ -405,8 +449,10 @@
                             let lat = order.lnglat[1] + (((Math.random() * 2) - 1) / 3000);
 
                             for (let j = 0; j < order_list.length; j++) {
+                                console.log(order_list[j].getExtData(), order.id);
                                 if (order_list[j].getExtData() === order.id) {
                                     order_list.splice(j, 1);
+                                    console.log('删除', order.id);
                                     break;
                                 }
                             }
