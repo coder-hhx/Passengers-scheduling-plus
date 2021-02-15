@@ -362,8 +362,6 @@ def schedule(must_cars: List[Car], cars: List[Car], orders: List[Order], order_d
                         result.append((order, cluster['car']))
                         break
 
-    push_data(result)
-
     if debug:
         data = []
         if type_ == 'receive':
@@ -403,6 +401,8 @@ def schedule(must_cars: List[Car], cars: List[Car], orders: List[Order], order_d
                     })
 
         return data
+    else:
+        push_data(result)
 
 
 def run(mode: int, debug=False):
