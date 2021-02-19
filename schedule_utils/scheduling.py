@@ -87,8 +87,11 @@ def abandon_order(orders: List[Order], center: List[float], max_dis: int):
     """
     new_orders = []
     for order in orders:
-        order.weight = ((max_dis - get_distance(center[0], center[1], order.lng, order.lat)) / max_dis) * 0.01 \
-                       + (0.9 * order.passenger_num) * (1 - order.is_grab)
+        if max_dis > 0:
+            order.weight = ((max_dis - get_distance(center[0], center[1], order.lng, order.lat)) / max_dis) * 0.01 \
+                           + (0.9 * order.passenger_num) * (1 - order.is_grab)
+        else:
+            order.weight = 0.9 * order.passenger_num * (1 - order.is_grab)
         if order.is_grab == 0:
             new_orders.append(order)
         if order.is_grab == 1:
@@ -165,13 +168,11 @@ def preprocess_data(cars, orders, reserve_rate):
             for _ in range(math.floor(len(cars) * reserve_rate)):
                 available_cars.append(cars.pop(0))
 
-    center_point = get_orders_center_point(orders)
-
-    grab_orders.sort(key=lambda elem: get_distance(center_point[0], center_point[1], elem.lng, elem.lat))
-
     while get_cars_sites_num(must_cars) + get_cars_sites_num(available_cars) \
             < all_passenger_num + get_orders_passengers_num(grab_orders):
         # 若车辆座位数小于乘客数，则放弃最远的范围外的订单
+        center_point = get_orders_center_point(orders)
+        grab_orders.sort(key=lambda elem: get_distance(center_point[0], center_point[1], elem.lng, elem.lat))
         grab_orders.pop()
 
     available_orders.extend(grab_orders)
@@ -209,16 +210,14 @@ def schedule(must_cars: List[Car], cars: List[Car], orders: List[Order], order_d
         else:
             out_orders.append(order)
 
-    center = [0, 0]
-
-    for order in in_orders:
-        center[0] += order.lng
-        center[1] += order.lat
-
-    center[0] /= len(in_orders)
-    center[1] /= len(in_orders)
-
-    must_cars.sort(key=lambda car: get_distance(center[0], center[1], car.lng, car.lat))
+    if len(in_orders) > 0:
+        center = [0, 0]
+        for order in in_orders:
+            center[0] += order.lng
+            center[1] += order.lat
+        center[0] /= len(in_orders)
+        center[1] /= len(in_orders)
+        must_cars.sort(key=lambda car: get_distance(center[0], center[1], car.lng, car.lat))
 
     for car in must_cars:
         lng = 0
@@ -234,7 +233,7 @@ def schedule(must_cars: List[Car], cars: List[Car], orders: List[Order], order_d
         while True:
             in_orders.sort(key=lambda order: get_distance(order.lng, order.lat, cluster["coordinate"][0],
                                                           cluster["coordinate"][1]))
-            if get_distance(in_orders[0].lng, in_orders[1].lat, cluster['coordinate'][0],
+            if get_distance(in_orders[0].lng, in_orders[0].lat, cluster['coordinate'][0],
                             cluster['coordinate'][1]) > order_distance:
                 break
             if in_orders[0].passenger_num <= car.surplus_sites:

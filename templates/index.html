@@ -144,7 +144,7 @@
         <label class="font">输入数据：</label>
     </div>
     <textarea id="data-txt" class="msg_txt" style="overflow-Y:scroll" placeholder="请输入数据"
-              onkeyup="check_data()"></textarea>
+              onkeyup="check_data(1)"></textarea>
 
     <p id="f" style="font-size: 14px;color: red;display: none">数据格式错误</p>
     <p id="y" style="font-size: 14px;color: limegreen;display: none">数据格式正确</p>
@@ -219,7 +219,7 @@
 
     let valid_data = false;
 
-    function check_data() {
+    function check_data(mode = 0) {
         let data_txt = $("#data-txt").val();
         try {
             let data = $.parseJSON(data_txt);
@@ -277,7 +277,6 @@
 
                         map.add(markers);
                         map.add(order_list);
-                        map.setFitView();
                     } else {
                         $("p#y").css("display", "none");
                         $("p#f").css("display", "block");
@@ -306,8 +305,10 @@
             polylines = [];
             order_list = [];
         }
-
-        map.setFitView();
+        if (mode === 1) {
+            console.log(mode);
+            map.setFitView();
+        }
     }
 
 
