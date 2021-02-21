@@ -450,10 +450,8 @@
                             let lat = order.lnglat[1] + (((Math.random() * 2) - 1) / 3000);
 
                             for (let j = 0; j < order_list.length; j++) {
-                                console.log(order_list[j].getExtData(), order.id);
                                 if (order_list[j].getExtData() === order.id) {
                                     order_list.splice(j, 1);
-                                    console.log('删除', order.id);
                                     break;
                                 }
                             }

@@ -38,80 +38,79 @@ def schedule(mode):
 
 @app.route('/test/', methods=["POST"])
 def test():
-    try:
-        data_txt = str(request.form["data_txt"])
-        order_distance = int(request.form["order_distance"])
-        car_distance = int(request.form["car_distance"])
-        reserve_rate = float(request.form["reserve_rate"])
-        type_ = str(request.form["data_type"])
-        mode = int(request.form["mode"])
-        radius = int(request.form['radius'])
+    # try:
+    data_txt = str(request.form["data_txt"])
+    order_distance = int(request.form["order_distance"])
+    car_distance = int(request.form["car_distance"])
+    reserve_rate = float(request.form["reserve_rate"])
+    type_ = str(request.form["data_type"])
+    mode = int(request.form["mode"])
+    radius = int(request.form['radius'])
 
-        data = json.loads(data_txt)
+    data = json.loads(data_txt)
 
-        car_list: List[Car] = []  # 车辆列表
-        order_list: List[Order] = []  # 订单列表
+    car_list: List[Car] = []  # 车辆列表
+    order_list: List[Order] = []  # 订单列表
 
-        if mode == 1:
-            for order in data['user_list']:
+    if mode == 1:
+        for order in data['user_list']:
+            o = Order(
+                id_=int(order['id']),
+                passenger_num=int(order['size']),
+                lng=float(order['coordinate'][0]),
+                lat=float(order['coordinate'][1]),
+                is_grab=is_in_scope(float(order['coordinate'][0]), float(order['coordinate'][1]), radius)
+            )
+            if order['bind_car'] != '':
+                o.bind_car = int(order['bind_car'])
+            order_list.append(o)
+    else:
+        for order in data['user_list']:
+            is_grab = is_in_scope(float(order['coordinate'][0]), float(order['coordinate'][1]), radius)
+            for i in range(int(order['size'])):
                 o = Order(
                     id_=int(order['id']),
-                    passenger_num=int(order['size']),
+                    passenger_num=1,
                     lng=float(order['coordinate'][0]),
                     lat=float(order['coordinate'][1]),
-                    is_grab=is_in_scope(float(order['coordinate'][0]), float(order['coordinate'][1]), radius)
+                    is_grab=is_grab
                 )
                 if order['bind_car'] != '':
                     o.bind_car = int(order['bind_car'])
                 order_list.append(o)
-        else:
-            for order in data['user_list']:
-                is_grab = is_in_scope(float(order['coordinate'][0]), float(order['coordinate'][1]), radius)
-                for i in range(int(order['size'])):
-                    o = Order(
-                        id_=int(order['id']),
-                        passenger_num=1,
-                        lng=float(order['coordinate'][0]),
-                        lat=float(order['coordinate'][1]),
-                        is_grab=is_grab
-                    )
-                    if order['bind_car'] != '':
-                        o.bind_car = int(order['bind_car'])
-                    order_list.append(o)
 
-        if type_ == "receive":
-            for car in data['driver_list']:
-                car_list.append(
-                    Car(
-                        id_=int(car['driver_id']),
-                        lng=float(car['coordinate'][0]),
-                        lat=float(car['coordinate'][1]),
-                        sites=int(car['sites'])
-                    )
+    if type_ == "receive":
+        for car in data['driver_list']:
+            car_list.append(
+                Car(
+                    id_=int(car['driver_id']),
+                    lng=float(car['coordinate'][0]),
+                    lat=float(car['coordinate'][1]),
+                    sites=int(car['sites'])
                 )
-        elif type_ == "send":
-            for car in data['driver_list']:
-                car_list.append(
-                    Car(
-                        id_=int(car['driver_id']),
-                        lng=0,
-                        lat=0,
-                        sites=int(car['sites'])
-                    )
+            )
+    elif type_ == "send":
+        for car in data['driver_list']:
+            car_list.append(
+                Car(
+                    id_=int(car['driver_id']),
+                    lng=0,
+                    lat=0,
+                    sites=int(car['sites'])
                 )
+            )
 
-        result = test_schedule(order_list, car_list, type_, order_distance, car_distance, reserve_rate)
-        return jsonify({
-            'status': 200,
-            'data': result
-        })
+    result = test_schedule(order_list, car_list, type_, order_distance, car_distance, reserve_rate)
+    return jsonify({
+        'status': 200,
+        'data': result
+    })
 
-    except Exception as e:
-        print(e)
-        return jsonify({
-            'status': 500
-        })
-    pass
+    # except Exception as e:
+    #     print(e)
+    #     return jsonify({
+    #         'status': 500
+    #     })
 
 
 @app.route('/check_data/', methods=["POST"])

@@ -14,8 +14,6 @@ from typing import List
 import numpy as np
 from sklearn.cluster import KMeans
 
-from schedule_utils.BiKmeans import biKmeans
-from schedule_utils.data_utils import load_data
 from schedule_utils.models import Order, Car
 
 
@@ -29,6 +27,18 @@ def has_solved_orders(orders):
         if not order.unsolved:
             return True
     return False
+
+
+def is_all_grab_orders(orders: List[Order]):
+    """
+    判断一组订单中是否全部在范围之外
+    :param orders:
+    :return:
+    """
+    for order in orders:
+        if order.is_grab == 0:
+            return False
+    return True
 
 
 def get_distance(lng1, lat1, lng2, lat2):
@@ -49,43 +59,56 @@ def get_distance(lng1, lat1, lng2, lat2):
     return s
 
 
-def DP(car: Car, dis_list: List[Order]):
+def DP(car: Car, orders: List[Order]):
     """
     动态规划，参考背包问题
     :param car: 要分配的车
-    :param dis_list: 可被分配的订单列表
+    :param orders: 可被分配的订单列表
     :return:
     """
-    path = np.zeros((len(dis_list) + 1, car.surplus_sites + 1))
+    path = np.zeros((len(orders) + 1, car.surplus_sites + 1))
     table = np.zeros(car.surplus_sites + 1)
     r = []
-    if len(dis_list) == 1:  # 若只有一个订单，则直接分配给该车
-        if car.surplus_sites >= dis_list[0].passenger_num:
-            car.change_surplus_sites(dis_list[0].passenger_num)
-            dis_list[0].unsolved = False
-            car.orders.append(dis_list[0])
-            r.append((dis_list[0], car))
+    if len(orders) == 1:  # 若只有一个订单，则直接分配给该车
+        if car.surplus_sites >= orders[0].passenger_num:
+            if is_all_grab_orders(orders):
+                if orders[0].passenger_num <= car.surplus_sites * 0.5:
+                    return r
+            car.change_surplus_sites(orders[0].passenger_num)
+            orders[0].unsolved = False
+            car.orders.append(orders[0])
+            r.append((orders[0], car))
     else:
-        for i in range(1, len(dis_list) + 1):
-            for j in range(car.surplus_sites, dis_list[i - 1].passenger_num - 1, -1):
+        for i in range(1, len(orders) + 1):
+            for j in range(car.surplus_sites, orders[i - 1].passenger_num - 1, -1):
                 path[i, j] = 0
-                if table[j] < (table[j - dis_list[i - 1].passenger_num] + dis_list[i - 1].weight) and dis_list[i - 1].is_grab == 0:
-                    table[j] = table[j - dis_list[i - 1].passenger_num] + dis_list[i - 1].weight
+                if table[j] < (table[j - orders[i - 1].passenger_num] + orders[i - 1].weight):
+                    table[j] = table[j - orders[i - 1].passenger_num] + orders[i - 1].weight
                     path[i, j] = 1
 
-        i, j = len(dis_list), car.surplus_sites
+        i, j = len(orders), car.surplus_sites
+        if is_all_grab_orders(orders):
+            all_passenger = 0
+            while i > 0 and j > 0:
+                if path[i, j] == 1:
+                    all_passenger += orders[i - 1].passenger_num
+                    j -= orders[i - 1].passenger_num
+                i -= 1
+            if all_passenger <= car.surplus_sites * 0.5:
+                return r
+        i, j = len(orders), car.surplus_sites
         while i > 0 and j > 0:
             if path[i, j] == 1:
-                car.change_surplus_sites(dis_list[i - 1].passenger_num)
-                dis_list[i - 1].unsolved = False
-                car.orders.append(dis_list[i - 1])
-                r.append((dis_list[i - 1], car))
-                j -= dis_list[i - 1].passenger_num
+                car.change_surplus_sites(orders[i - 1].passenger_num)
+                orders[i - 1].unsolved = False
+                car.orders.append(orders[i - 1])
+                r.append((orders[i - 1], car))
+                j -= orders[i - 1].passenger_num
             i -= 1
     return r
 
 
-def k_means(order_list: List[Order], k):
+def k_means(order_list: List[Order], k: int):
     """
     聚类
     :param order_list:
@@ -101,7 +124,6 @@ def k_means(order_list: List[Order], k):
     # centers, clusters = biKmeans(data, k)
     # centers = np.array([i.A.tolist()[0] for i in centers])
     # clusters = clusters[:, 0].A[:, 0]
-
 
     the_maps = []
     lng = lat = count = 0
@@ -123,19 +145,54 @@ def k_means(order_list: List[Order], k):
     return the_maps
 
 
-def find_closest_obj(point, data):
+def find_closest_car(cluster, cars, car_distance, type_, is_grab=False):
     """
-    寻找距离point最近的一个点
-    :param point:
-    :param data:
+    寻找距离cluster最近的一个车
+    :param cluster:
+    :param cars:
+    :param car_distance:
+    :param type_
+    :param is_grab:
     :return:
     """
-    data.sort(
-        key=lambda obj: get_distance(obj.lng, obj.lat, point['coordinate'][0], point['coordinate'][1]))
-    for obj in data:
-        if len(obj.orders) == 0:
-            data.remove(obj)
-            return obj
+    passenger_num = 0
+
+    for order in cluster['orders']:
+        passenger_num += order.passenger_num
+
+    if type_ == 'receive':
+        cars.sort(
+            key=lambda car: get_distance(car.lng, car.lat, cluster['coordinate'][0], cluster['coordinate'][1]))
+        for car in cars:
+            if len(car.orders) == 0 and \
+                    get_distance(car.lng, car.lat, cluster['coordinate'][0],
+                                 cluster['coordinate'][1]) < car_distance and \
+                    car.surplus_sites >= passenger_num:
+                cars.remove(car)
+                return car
+
+        for car in cars:
+            if len(car.orders) == 0 and \
+                    get_distance(car.lng, car.lat, cluster['coordinate'][0], cluster['coordinate'][1]) < car_distance:
+                cars.remove(car)
+                return car
+
+        if not is_grab:
+            for car in cars:
+                if len(car.orders) == 0:
+                    cars.remove(car)
+                    return car
+    else:
+        cars.sort(key=lambda car: car.surplus_sites)
+        for car in cars:
+            if len(car.orders) == 0 and car.surplus_sites >= passenger_num:
+                cars.remove(car)
+                return car
+
+        for car in cars:
+            if len(car.orders) == 0:
+                cars.remove(car)
+                return car
 
 
 def find_closest_cluster(obj, clusters):
