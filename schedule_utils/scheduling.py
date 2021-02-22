@@ -381,16 +381,17 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
                 surplus_available_cars_num -= k
                 break
 
-        for cluster in clusters_out:
-            closest_car: Car = find_closest_car(cluster, cars, car_distance, type_, is_grab=True)
-            if closest_car:
-                cluster['orders'] = term_weight(cluster['orders'], cluster['coordinate'], order_distance)
-                cluster['car'] = closest_car
-                result.extend(DP(closest_car, cluster["orders"]))
+        if clusters_out:
+            for cluster in clusters_out:
+                closest_car: Car = find_closest_car(cluster, cars, car_distance, type_, is_grab=True)
+                if closest_car:
+                    cluster['orders'] = term_weight(cluster['orders'], cluster['coordinate'], order_distance)
+                    cluster['car'] = closest_car
+                    result.extend(DP(closest_car, cluster["orders"]))
 
-                # TODO 调试使用，生产环境删除
-                debug_cars.append(closest_car)
-                must_clusters.append(cluster)
+                    # TODO 调试使用，生产环境删除
+                    debug_cars.append(closest_car)
+                    must_clusters.append(cluster)
 
     # TODO 调试使用，生产环境删除
     if debug:
