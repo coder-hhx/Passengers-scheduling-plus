@@ -29,6 +29,18 @@ def has_solved_orders(orders):
     return False
 
 
+def has_unsolved_orders(orders):
+    """
+    判断是否有未分配的订单
+    :param orders:
+    :return:
+    """
+    for order in orders:
+        if order.unsolved:
+            return True
+    return False
+
+
 def is_all_grab_orders(orders: List[Order]):
     """
     判断一组订单中是否全部在范围之外
@@ -69,7 +81,7 @@ def DP(car: Car, orders: List[Order]):
     path = np.zeros((len(orders) + 1, car.surplus_sites + 1))
     table = np.zeros(car.surplus_sites + 1)
     r = []
-    if len(orders) == 1:  # 若只有一个订单，则直接分配给该车
+    if len(orders) == 1 and orders[0].unsolved:  # 若只有一个订单，则直接分配给该车
         if car.surplus_sites >= orders[0].passenger_num:
             if is_all_grab_orders(orders):
                 if orders[0].passenger_num <= car.surplus_sites * 0.5:
@@ -82,7 +94,7 @@ def DP(car: Car, orders: List[Order]):
         for i in range(1, len(orders) + 1):
             for j in range(car.surplus_sites, orders[i - 1].passenger_num - 1, -1):
                 path[i, j] = 0
-                if table[j] < (table[j - orders[i - 1].passenger_num] + orders[i - 1].weight):
+                if table[j] < (table[j - orders[i - 1].passenger_num] + orders[i - 1].weight) and orders[i - 1].unsolved:
                     table[j] = table[j - orders[i - 1].passenger_num] + orders[i - 1].weight
                     path[i, j] = 1
 
@@ -92,6 +104,7 @@ def DP(car: Car, orders: List[Order]):
             while i > 0 and j > 0:
                 if path[i, j] == 1:
                     all_passenger += orders[i - 1].passenger_num
+                    orders[i - 1].unsolved = False
                     j -= orders[i - 1].passenger_num
                 i -= 1
             if all_passenger <= car.surplus_sites * 0.5:

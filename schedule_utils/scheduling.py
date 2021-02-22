@@ -11,7 +11,7 @@ Create Date: 2021/2/2
 import math
 from typing import List
 
-from schedule_utils.caculate_utils import k_means, get_distance, DP, find_closest_car
+from schedule_utils.caculate_utils import k_means, get_distance, DP, find_closest_car, has_unsolved_orders
 from schedule_utils.data_utils import load_data, push_data, have_data
 from schedule_utils.models import Order, Car
 
@@ -280,7 +280,24 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
     surplus_available_cars_num = math.floor((len(cars) - available_cars_num) * reserve_rate)
 
     while True:
-        clusters_out = k_means(orders, surplus_available_cars_num)
+        surplus_passenger_num = 0  # 剩余乘客数量
+        sites_num = 0
+        available_cars_num = 0
+        for order in orders:
+            surplus_passenger_num += order.passenger_num
+
+        if surplus_passenger_num > 0:
+            for car in cars:
+                sites_num += car.surplus_sites
+                available_cars_num += 1
+                if sites_num >= surplus_passenger_num:
+                    break
+        if surplus_available_cars_num < available_cars_num:
+            clusters_out = k_means(orders, surplus_available_cars_num)
+            surplus_available_cars_num = 0
+        else:
+            clusters_out = k_means(orders, available_cars_num)
+            surplus_available_cars_num -= available_cars_num
         for cluster in clusters_out:
             obj = abandon_order(cluster['orders'], cluster['coordinate'], order_distance)
             if obj:
@@ -299,6 +316,23 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
             # TODO 调试使用，生产环境删除
             debug_cars.append(closest_car)
             must_clusters.append(cluster)
+
+    while surplus_available_cars_num > 0:
+        for cluster in clusters_out:
+            if has_unsolved_orders(cluster['orders']):
+                closest_car: Car = find_closest_car(cluster, cars, car_distance, type_, is_grab=True)
+                surplus_available_cars_num -= 1
+                if closest_car:
+                    cluster['orders'] = term_weight(cluster['orders'], cluster['coordinate'], order_distance)
+                    cluster['car'] = closest_car
+                    result.extend(DP(closest_car, cluster["orders"]))
+
+                    # TODO 调试使用，生产环境删除
+                    debug_cars.append(closest_car)
+                    must_clusters.append(cluster)
+                    break
+        else:
+            break
 
     # TODO 调试使用，生产环境删除
     if debug:
