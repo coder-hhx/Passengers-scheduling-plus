@@ -215,7 +215,8 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
         result.extend(DP(closest_car, cluster["orders"]))
 
         # TODO 调试使用，生产环境删除
-        debug_cars.append(closest_car)
+        if closest_car not in debug_cars:
+            debug_cars.append(closest_car)
 
     must_clusters.extend(clusters_in)
 
@@ -324,7 +325,8 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
                 result.extend(DP(closest_car, cluster["orders"]))
 
                 # TODO 调试使用，生产环境删除
-                debug_cars.append(closest_car)
+                if closest_car not in debug_cars:
+                    debug_cars.append(closest_car)
                 must_clusters.append(cluster)
 
         for cluster in clusters_out:
@@ -340,7 +342,8 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
                     surplus_available_cars_num -= 1
 
                     # TODO 调试使用，生产环境删除
-                    debug_cars.append(closest_car)
+                    if closest_car not in debug_cars:
+                        debug_cars.append(closest_car)
                     must_clusters.append(cluster)
                 else:
                     break
@@ -390,7 +393,8 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
                     result.extend(DP(closest_car, cluster["orders"]))
 
                     # TODO 调试使用，生产环境删除
-                    debug_cars.append(closest_car)
+                    if closest_car not in debug_cars:
+                        debug_cars.append(closest_car)
                     must_clusters.append(cluster)
 
     # TODO 调试使用，生产环境删除
