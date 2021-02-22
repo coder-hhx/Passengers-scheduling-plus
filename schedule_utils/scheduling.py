@@ -8,6 +8,7 @@ Contact: houhaixu_email@163.com
 Create Date: 2021/2/2
 -------------------------------------------------
 """
+import copy
 import math
 from typing import List
 
@@ -254,6 +255,8 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
                         cluster['car'].change_surplus_sites(o.passenger_num)
                         result.append((o, cluster['car']))
                         break
+                else:
+                    break
 
     calculate_centroid(clusters_in)
 
@@ -279,11 +282,14 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
 
     surplus_available_cars_num = math.floor((len(cars) - available_cars_num) * reserve_rate)
 
+    clusters_out = None
+
+    available_orders = copy.copy(orders)
     while True:
         surplus_passenger_num = 0  # 剩余乘客数量
         sites_num = 0
         available_cars_num = 0
-        for order in orders:
+        for order in available_orders:
             surplus_passenger_num += order.passenger_num
 
         if surplus_passenger_num > 0:
@@ -292,47 +298,99 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
                 available_cars_num += 1
                 if sites_num >= surplus_passenger_num:
                     break
-        if surplus_available_cars_num < available_cars_num:
-            clusters_out = k_means(orders, surplus_available_cars_num)
-            surplus_available_cars_num = 0
         else:
-            clusters_out = k_means(orders, available_cars_num)
-            surplus_available_cars_num -= available_cars_num
+            break
+        if surplus_available_cars_num < available_cars_num:
+            clusters_out = k_means(available_orders, surplus_available_cars_num)
+            k = surplus_available_cars_num
+        else:
+            clusters_out = k_means(available_orders, available_cars_num)
+            k = available_cars_num
         for cluster in clusters_out:
             obj = abandon_order(cluster['orders'], cluster['coordinate'], order_distance)
             if obj:
-                orders.remove(obj)
+                available_orders.remove(obj)
                 break
         else:
+            surplus_available_cars_num -= k
             break
 
-    for cluster in clusters_out:
-        closest_car: Car = find_closest_car(cluster, cars, car_distance, type_, is_grab=True)
-        if closest_car:
-            cluster['orders'] = term_weight(cluster['orders'], cluster['coordinate'], order_distance)
-            cluster['car'] = closest_car
-            result.extend(DP(closest_car, cluster["orders"]))
-
-            # TODO 调试使用，生产环境删除
-            debug_cars.append(closest_car)
-            must_clusters.append(cluster)
-
-    while surplus_available_cars_num > 0:
+    if clusters_out:
         for cluster in clusters_out:
-            if has_unsolved_orders(cluster['orders']):
+            closest_car: Car = find_closest_car(cluster, cars, car_distance, type_, is_grab=True)
+            if closest_car:
+                cluster['orders'] = term_weight(cluster['orders'], cluster['coordinate'], order_distance)
+                cluster['car'] = closest_car
+                result.extend(DP(closest_car, cluster["orders"]))
+
+                # TODO 调试使用，生产环境删除
+                debug_cars.append(closest_car)
+                must_clusters.append(cluster)
+
+        for cluster in clusters_out:
+            while surplus_available_cars_num > 0:
                 closest_car: Car = find_closest_car(cluster, cars, car_distance, type_, is_grab=True)
-                surplus_available_cars_num -= 1
                 if closest_car:
                     cluster['orders'] = term_weight(cluster['orders'], cluster['coordinate'], order_distance)
                     cluster['car'] = closest_car
-                    result.extend(DP(closest_car, cluster["orders"]))
+                    r = DP(closest_car, cluster["orders"])
+                    if len(r) == 0:
+                        break
+                    result.extend(r)
+                    surplus_available_cars_num -= 1
 
                     # TODO 调试使用，生产环境删除
                     debug_cars.append(closest_car)
                     must_clusters.append(cluster)
+                else:
                     break
-        else:
-            break
+
+    available_orders = []
+    for order in orders:
+        if order.unsolved:
+            available_orders.append(order)
+    if surplus_available_cars_num > 0:
+        while True:
+            surplus_passenger_num = 0  # 剩余乘客数量
+            sites_num = 0
+            available_cars_num = 0
+            for order in available_orders:
+                surplus_passenger_num += order.passenger_num
+
+            if surplus_passenger_num > 0:
+                for car in cars:
+                    sites_num += car.surplus_sites
+                    available_cars_num += 1
+                    if sites_num >= surplus_passenger_num:
+                        break
+            else:
+                break
+            if surplus_available_cars_num < available_cars_num:
+                clusters_out = k_means(available_orders, surplus_available_cars_num)
+                k = surplus_available_cars_num
+            else:
+                clusters_out = k_means(available_orders, available_cars_num)
+                k = available_cars_num
+
+            for cluster in clusters_out:
+                obj = abandon_order(cluster['orders'], cluster['coordinate'], order_distance)
+                if obj:
+                    available_orders.remove(obj)
+                    break
+            else:
+                surplus_available_cars_num -= k
+                break
+
+        for cluster in clusters_out:
+            closest_car: Car = find_closest_car(cluster, cars, car_distance, type_, is_grab=True)
+            if closest_car:
+                cluster['orders'] = term_weight(cluster['orders'], cluster['coordinate'], order_distance)
+                cluster['car'] = closest_car
+                result.extend(DP(closest_car, cluster["orders"]))
+
+                # TODO 调试使用，生产环境删除
+                debug_cars.append(closest_car)
+                must_clusters.append(cluster)
 
     # TODO 调试使用，生产环境删除
     if debug:

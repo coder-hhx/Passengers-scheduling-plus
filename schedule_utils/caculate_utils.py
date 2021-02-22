@@ -94,7 +94,8 @@ def DP(car: Car, orders: List[Order]):
         for i in range(1, len(orders) + 1):
             for j in range(car.surplus_sites, orders[i - 1].passenger_num - 1, -1):
                 path[i, j] = 0
-                if table[j] < (table[j - orders[i - 1].passenger_num] + orders[i - 1].weight) and orders[i - 1].unsolved:
+                if table[j] < (table[j - orders[i - 1].passenger_num] + orders[i - 1].weight) and orders[
+                    i - 1].unsolved:
                     table[j] = table[j - orders[i - 1].passenger_num] + orders[i - 1].weight
                     path[i, j] = 1
 
@@ -104,7 +105,6 @@ def DP(car: Car, orders: List[Order]):
             while i > 0 and j > 0:
                 if path[i, j] == 1:
                     all_passenger += orders[i - 1].passenger_num
-                    orders[i - 1].unsolved = False
                     j -= orders[i - 1].passenger_num
                 i -= 1
             if all_passenger <= car.surplus_sites * 0.5:
@@ -181,30 +181,43 @@ def find_closest_car(cluster, cars, car_distance, type_, is_grab=False):
                     get_distance(car.lng, car.lat, cluster['coordinate'][0],
                                  cluster['coordinate'][1]) < car_distance and \
                     car.surplus_sites >= passenger_num:
-                cars.remove(car)
+                # cars.remove(car)
+                return car
+
+        for car in cars:
+            if len(car.orders) == 0 and \
+                    get_distance(car.lng, car.lat, cluster['coordinate'][0], cluster['coordinate'][1]) < car_distance \
+                    and car.surplus_sites > max(cluster['orders'], key=lambda o: o.passenger_num).passenger_num:
+                # cars.remove(car)
                 return car
 
         for car in cars:
             if len(car.orders) == 0 and \
                     get_distance(car.lng, car.lat, cluster['coordinate'][0], cluster['coordinate'][1]) < car_distance:
-                cars.remove(car)
+                # cars.remove(car)
                 return car
 
         if not is_grab:
             for car in cars:
                 if len(car.orders) == 0:
-                    cars.remove(car)
+                    # cars.remove(car)
                     return car
     else:
-        cars.sort(key=lambda car: car.surplus_sites)
+        cars.sort(key=lambda car: car.surplus_sites, reverse=True)
         for car in cars:
             if len(car.orders) == 0 and car.surplus_sites >= passenger_num:
-                cars.remove(car)
+                # cars.remove(car)
+                return car
+
+        for car in cars:
+            if len(car.orders) == 0 and \
+                    car.surplus_sites > max(cluster['orders'], key=lambda o: o.passenger_num).passenger_num:
+                # cars.remove(car)
                 return car
 
         for car in cars:
             if len(car.orders) == 0:
-                cars.remove(car)
+                # cars.remove(car)
                 return car
 
 
