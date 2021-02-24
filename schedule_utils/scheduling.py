@@ -12,7 +12,7 @@ import copy
 import math
 from typing import List
 
-from schedule_utils.caculate_utils import k_means, get_distance, DP, find_closest_car, has_unsolved_orders
+from schedule_utils.caculate_utils import k_means, get_distance, DP, find_closest_car
 from schedule_utils.data_utils import load_data, push_data, have_data
 from schedule_utils.models import Order, Car
 
@@ -445,7 +445,7 @@ def run(mode: int, debug=False):
 
     result.clear()
     order_list, car_list, type_, order_distance, car_distance, reserve_rate = load_data(mode)
-    ret = new_schedule(car_list, order_list, reserve_rate, order_distance, car_distance, type_, debug=True)
+    ret = new_schedule(car_list, order_list, reserve_rate, order_distance, car_distance, type_, debug=False)
     if debug:
         return ret
 
