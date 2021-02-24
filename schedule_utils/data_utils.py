@@ -100,7 +100,7 @@ def push_data(result: List[Tuple[Order, Car]]):
 
 
 def receive_data():
-    with open(r'C:\Users\10219\Desktop\Passengers-scheduling-plus\data.txt', 'r', encoding='utf-8') as f:
+    with open(r'F:\personal\Passengers-scheduling-plus\data.txt', 'r', encoding='utf-8') as f:
         data_txt = f.read()
     r.lpush('data', data_txt)
 
@@ -109,3 +109,7 @@ def send_data():
     with open(r'C:\Users\10219\Desktop\Passengers-scheduling-plus\data.txt', 'r', encoding='utf-8') as f:
         data_txt = f.read()
     r.lpush('data', data_txt)
+
+
+if __name__ == '__main__':
+    receive_data()

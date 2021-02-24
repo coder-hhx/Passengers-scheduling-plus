@@ -302,11 +302,12 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
         else:
             break
         if surplus_available_cars_num < available_cars_num:
-            clusters_out = k_means(available_orders, surplus_available_cars_num)
             k = surplus_available_cars_num
         else:
-            clusters_out = k_means(available_orders, available_cars_num)
             k = available_cars_num
+        if k > len(available_orders):
+            k = len(available_orders)
+        clusters_out = k_means(available_orders, k)
         for cluster in clusters_out:
             obj = abandon_order(cluster['orders'], cluster['coordinate'], order_distance)
             if obj:
@@ -369,11 +370,12 @@ def new_schedule(cars: List[Car], orders: List[Order], reserve_rate: float, orde
             else:
                 break
             if surplus_available_cars_num < available_cars_num:
-                clusters_out = k_means(available_orders, surplus_available_cars_num)
                 k = surplus_available_cars_num
             else:
-                clusters_out = k_means(available_orders, available_cars_num)
                 k = available_cars_num
+            if k > len(available_orders):
+                k = len(available_orders)
+            clusters_out = k_means(available_orders, k)
 
             for cluster in clusters_out:
                 obj = abandon_order(cluster['orders'], cluster['coordinate'], order_distance)
